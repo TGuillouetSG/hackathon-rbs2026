@@ -75,10 +75,23 @@
         if (!item) return;
         item.classList.remove('is-pending', 'is-running', 'is-complete', 'is-error');
         item.classList.add(`is-${state}`);
+        if (state === 'running') item.setAttribute('aria-current', 'step');
+        else item.removeAttribute('aria-current');
         const icon = item.querySelector('.step-icon');
-        icon.innerHTML = state === 'complete' ? '<span aria-label="Terminé">✓</span>' :
-          state === 'running' ? '<span class="step-spinner" aria-label="En cours"></span>' :
-          state === 'error' ? '<span aria-label="Échec">!</span>' : '<span class="step-spinner"></span>';
+        icon.setAttribute('role', 'img');
+        icon.setAttribute('aria-label', { pending: 'En attente', running: 'En cours', complete: 'Terminé', error: 'Échec' }[state]);
+        icon.innerHTML = state === 'complete' ? '<svg class="step-check" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>' :
+          state === 'running' ? '<span class="step-spinner" aria-hidden="true"></span>' :
+          state === 'error' ? '<span aria-hidden="true">!</span>' : '';
+      }
+
+      function showError(message) {
+        steps.forEach(item => {
+          if (item.classList.contains('is-running')) updateStep(item.dataset.step, 'error');
+        });
+        status.textContent = 'La préparation a rencontré un problème.';
+        error.textContent = message || 'Une erreur est survenue.';
+        error.hidden = false;
       }
 
       function handleEvent(event) {
@@ -95,9 +108,7 @@
         }
         if (data.status === 'done') status.textContent = 'Préparation terminée';
         if (data.status === 'error') {
-          status.textContent = 'La préparation a rencontré un problème.';
-          error.textContent = data.message || 'Une erreur est survenue.';
-          error.hidden = false;
+          showError(data.message);
         }
       }
 
@@ -119,9 +130,7 @@
             }
           }
         } catch (err) {
-          status.textContent = 'La préparation a rencontré un problème.';
-          error.textContent = err.message || 'Une erreur est survenue.';
-          error.hidden = false;
+          showError(err.message);
         }
       }
 

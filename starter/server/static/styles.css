@@ -969,7 +969,10 @@ a {
 .is-running .step-icon { border-color: #465fc6; background: #f5f6ff; }
 .is-complete .step-icon { border-color: #198754; background: #198754; }
 .is-error .step-icon { border-color: #d04444; background: #d04444; }
-.step-spinner { width: 15px; height: 15px; border: 2px solid #d8ddec; border-top-color: #465fc6; border-radius: 50%; animation: workflow-spin .75s linear infinite; }
+.step-spinner { display: block; width: 20px; height: 20px; border: 2px solid #d8ddec; border-top-color: #465fc6; border-right-color: #465fc6; border-radius: 50%; }
+.is-running .step-spinner { animation: workflow-spin .75s linear infinite; }
+.step-check { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.is-complete.workflow-step::after { border-color: #198754; }
 .is-pending .step-spinner { visibility: hidden; }
 .step-copy { display: flex; flex-direction: column; gap: 4px; }
 .step-copy strong { color: #353b46; font-size: 12px; font-weight: 600; }
@@ -982,7 +985,7 @@ a {
 .workflow-result p { margin: 0; color: #3e4b43; font-size: 11px; line-height: 1.6; white-space: pre-wrap; }
 .workflow-error { margin: 14px 0 0 47px; color: #ad3131; font-size: 11px; }
 @keyframes workflow-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .step-spinner { animation-duration: 2s; } }
+@media (prefers-reduced-motion: reduce) { .is-running .step-spinner { animation-duration: 2s; } }
 @media (max-width: 650px) {
   .rdv-content { padding: 15px 10px; }
   .workflow-heading { padding: 18px; }
