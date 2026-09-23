@@ -287,15 +287,51 @@ a {
   margin-left: 2px
 }
 
+.client-actions {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: none
+}
+
 .grc {
-  position: absolute;
-  right: 20px;
-  top: 9px;
-  border: 1px solid #222;
-  border-radius: 3px;
-  padding: 2px 6px;
+  color: #626b75;
   font-size: 9px;
-  background: white
+  white-space: nowrap
+}
+
+.rdv-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid #d7e2f5;
+  border-radius: 4px;
+  background: #f5f8ff;
+  color: #174ea6;
+  font-size: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease
+}
+
+.rdv-link span {
+  font-size: 12px;
+  line-height: 10px
+}
+
+.rdv-link:hover {
+  background: #eaf1ff;
+  border-color: #a9c2ed;
+  color: #103b82
+}
+
+.rdv-link:focus-visible {
+  outline: 2px solid #285bd5;
+  outline-offset: 2px
 }
 
 .grid {
@@ -880,9 +916,8 @@ a {
     max-width: none
   }
 
-  .grc {
-    right: 8px;
-    top: 8px
+  .client-actions {
+    align-items: flex-end
   }
 
   .grid {
@@ -913,4 +948,47 @@ a {
 
 .rdv-link {
   
+}
+
+.rdv-content { min-height: calc(100vh - 112px); }
+.rdv-dashboard { max-width: 900px; margin: 0 auto; }
+.back-link { display: inline-block; margin: 0 0 14px 2px; color: #3657a7; font-size: 11px; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+.rdv-client { margin-bottom: 17px; }
+.workflow-panel { border: 1px solid #d8dce3; box-shadow: 0 2px 8px rgba(18, 30, 57, .05); }
+.workflow-heading { min-height: 113px; padding: 23px 27px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(110deg, #fff 62%, #f2f4ff); border-bottom: 1px solid #e5e7ec; }
+.workflow-heading h2 { margin: 5px 0 6px; color: #151949; font-size: 21px; }
+.workflow-heading p { margin: 0; color: #606978; font-size: 11px; }
+.eyebrow { color: #545c9a; font-size: 9px; font-weight: 700; letter-spacing: 1.1px; }
+.workflow-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; color: #fff; font-size: 23px; background: linear-gradient(145deg, #8a61de, #315bd3); }
+.workflow-body { padding: 20px 27px 25px; }
+.workflow-steps { list-style: none; margin: 0; padding: 0; }
+.workflow-step { min-height: 65px; display: flex; align-items: center; gap: 14px; position: relative; }
+.workflow-step:not(:last-child)::after { content: ""; position: absolute; left: 16px; top: 47px; height: 18px; border-left: 1px solid #dce0e8; }
+.step-icon { width: 33px; height: 33px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1px solid #d9dee8; background: #f7f8fa; color: #fff; font-size: 16px; }
+.is-running .step-icon { border-color: #465fc6; background: #f5f6ff; }
+.is-complete .step-icon { border-color: #198754; background: #198754; }
+.is-error .step-icon { border-color: #d04444; background: #d04444; }
+.step-spinner { width: 15px; height: 15px; border: 2px solid #d8ddec; border-top-color: #465fc6; border-radius: 50%; animation: workflow-spin .75s linear infinite; }
+.is-pending .step-spinner { visibility: hidden; }
+.step-copy { display: flex; flex-direction: column; gap: 4px; }
+.step-copy strong { color: #353b46; font-size: 12px; font-weight: 600; }
+.step-copy small { color: #858c97; font-size: 10px; }
+.is-running .step-copy strong { color: #263eaa; }
+.is-complete .step-copy strong { color: #28323a; }
+.workflow-status { margin: 13px 0 0 47px; color: #6b7380; font-size: 10px; }
+.workflow-result { margin: 20px 0 0 47px; padding: 16px 18px; border: 1px solid #d8e7dc; border-left: 3px solid #27834f; border-radius: 4px; background: #f7fbf8; }
+.workflow-result h3 { margin: 0 0 8px; color: #245838; font-size: 13px; }
+.workflow-result p { margin: 0; color: #3e4b43; font-size: 11px; line-height: 1.6; white-space: pre-wrap; }
+.workflow-error { margin: 14px 0 0 47px; color: #ad3131; font-size: 11px; }
+@keyframes workflow-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .step-spinner { animation-duration: 2s; } }
+@media (max-width: 650px) {
+  .rdv-content { padding: 15px 10px; }
+  .workflow-heading { padding: 18px; }
+  .workflow-heading h2 { font-size: 18px; }
+  .workflow-heading p { max-width: 275px; line-height: 1.5; }
+  .workflow-mark { width: 34px; height: 34px; flex: none; margin-left: 8px; }
+  .workflow-body { padding: 14px 16px 20px; }
+  .workflow-status, .workflow-result, .workflow-error { margin-left: 47px; }
 }
