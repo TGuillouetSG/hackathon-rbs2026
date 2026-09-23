@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Synapse — Synthèse client</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js"
+    integrity="sha384-2OatzQy1H+Zd/IIrjr1TcuDGqLXeHhbooAyJY1KdQMKnr4LZ22k31GBLdYKHmVjg"
+    crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <header class="appbar">
+    <div class="brand"><span class="brand-symbol"></span>SYNAPSE</div>
+    <nav class="topnav"><a href="#">Accueil</a><a href="#">Activité</a><a href="#">Pilotage</a><a href="#">Suivi</a>
+    </nav>
+    <label class="search"><span>⌕</span><input type="search"
+        placeholder="Rechercher un tiers, un contrat, une demande de service..."></label>
+    <div class="top-actions"><span title="Aide">ⓘ</span><span class="avatar-top" title="Profil"></span></div>
+  </header>
+  <div class="layout">
+    <aside class="rail" aria-label="Navigation client">
+      <a class="rail-item active" href="#synthese"><span class="ico">♙</span><span>Synthèse</span></a>
+      <a class="rail-item" href="#contrats"><span class="ico">▤</span><span>Contrats<br>&amp; Serv.</span></a>
+      <a class="rail-item" href="#banque"><span class="ico">▣</span><span>Banque<br>au quot.</span></a>
+      <a class="rail-item" href="#credits"><span class="ico">♧</span><span>Crédits</span></a>
+      <a class="rail-item" href="#epargne"><span class="ico">♧</span><span>Epargne<br>&amp; Titres</span></a>
+      <a class="rail-item" href="#assurance"><span class="ico">♧</span><span>Assu &amp;<br>Prévoy.</span></a>
+    </aside>
+    <div class="workspace">
+      <div class="titlebar">
+        <h1>Synthèse</h1>
+      </div>
+      <main class="content" id="synthese">
+        <div class="dashboard">
+          <section class="client-banner">
+            <div class="client-icon">♙</div>
+            <div class="identity">
+              <div class="client-name"><strong>Mme Annie BERTOUD</strong><small> - Née BERTOUD le 21/04/1977 à Sazeau
+                    (56240), France, 49 ans, célibataire&nbsp; <a href="#">Voir plus</a></small></div>
+              <div class="badges">
+                <span class="badge b-blue">Client</span>
+                <span class="badge b-purple">Banque Privée</span>
+                <span class="badge b-navy">NON CLASSE OU EN ATTENTE DE CLASSEMENT</span>
+                <span class="badge b-muted">Non classé ou en attente de classement</span>
+                <span class="badge b-gray">▣ Conformité - Non évaluée</span>
+                <span class="badge b-amber">⚠ Risques</span>
+                <span class="badge b-amber">⚠ Inactivité Eckert</span>
+              </div>
+            </div>
+            <div class="client-actions">
+              <span class="grc">ID GRC : BAB7595&nbsp; ▣</span>
+              <a class="rdv-link" href="/rdv">Préparer prochain RDV <span aria-hidden="true">→</span></a>
+            </div>
+          </section>
+          <div class="grid">
+            <div class="col col-left">
+              <section class="panel">
+                <header class="panel-title"><span class="title-icon">♙</span>
+                  <h2>Données Tiers</h2>
+                </header>
+                <div class="panel-body data-body">
+                  <div class="data-section">
+                    <div class="section-heading">Coordonnées <a href="#">Voir plus</a></div>
+                    <div class="info-line"><span class="highlight">⚠ Adresse(s) à mettre à jour</span></div>
+                    <div class="info-line">Téléphone : À renseigner <span class="status-icon">⚠</span></div>
+                    <div class="info-line">E-mail : À renseigner <span class="status-icon">⚠</span></div>
+                    <div class="info-line">Adresse : -, 91250 Tigery</div>
+                    <div class="info-line"><span class="highlight risk">Risque Pli non distribué</span></div>
+                  </div>
+                  <div class="data-section">
+                    <div class="section-heading">Situation professionnelle et fiscale <a href="#">Voir plus</a></div>
+                    <div class="info-line">Profession : -</div>
+                    <div class="info-line">Pays de résidence fiscale : France</div>
+                  </div>
+                  <div class="data-section">
+                    <div class="section-heading">Environnement bancaire <a href="#">Voir plus</a></div>
+                    <div class="info-line">Agence : Test Rabelais (0451)</div>
+                    <div class="info-line">Suivi Principal : Nicolas ZAOUI (CH CLI PRI)</div>
+                    <div class="info-line">Entrée en relation le : 01/11/1994 (31 ans)</div>
+                    <a class="link-line" href="#">Accéder à la Connaissance client</a>
+                    <a class="link-line" href="#">Accéder aux détails du client Banque Privée　➜</a>
+                    <a class="link-line" href="#">Consulter/Modifier les données Banque Privée　➜</a>
+                    <a class="link-line" href="#">Accéder au service de Gestion de Fortune　➜</a>
+                  </div>
+                </div>
+              </section>
+              <section class="panel client-digital">
+                <div class="panel-body">
+                  <div class="digital-title"><span class="title-icon">☞</span>Digital Client</div>
+                  <div class="digital-body">
+                    <div class="digital-row"><span class="status-icon red">ⓧ</span><span>Pas de contrat BAD</span></div>
+                    <div class="digital-row"><span style="width:14px"></span><span>Identifiant BAD :
+                        <b>16266313</b></span></div>
+                    <div class="digital-row"><span class="status-icon">⚠</span><span>Téléphone sécurité à
+                        renseigner</span></div>
+                    <div class="digital-row"><span class="status-icon">⚠</span><span>Pass sécurité à valider</span>
+                    </div>
+                    <a href="#">Gérer le téléphone et le pass sécurité　➜</a>
+                    <div class="digital-sub">Critères d'authentification　<a href="#">Voir plus</a></div>
+                    <div class="digital-row"><span class="status-icon">⚠</span><span>Critère 1 à renseigner</span></div>
+                    <div class="digital-row"><span class="status-icon">⚠</span><span>Critère 2 à renseigner</span></div>
+                    <div class="digital-row"><span class="status-icon">⚠</span><span>RGPD : consentements RGPD à
+                        collecter</span></div>
+                    <div class="digital-row"><span class="status-icon blue">ⓘ</span><span>Démat' non concerné</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+            <div class="col col-center">
+              <section class="panel" id="contrats">
+                <header class="panel-title"><span class="title-icon">♧</span>
+                  <h2>Contrats &amp; Services</h2>
+                </header>
+                <div class="warning"><span class="warning-icon">⚠</span><span>La restitution des contrats et services de
+                    Epargne et Titres n'a pas pu aboutir.<br>Veuillez réessayer ultérieurement.</span></div>
+                <div class="accordion" id="banque">Banque au quotidien <span class="chevron">⌃</span></div>
+                <div class="empty-contract">
+                  <div class="empty-box"></div><span>Aucun contrat ni service souscrit par le(s) tiers
+                    sélectionné(s)</span>
+                </div>
+                <div class="service-row" id="credits">Crédits <span class="service-actions"><span
+                      class="round-icon">⌂</span><span class="round-icon">▣</span><span class="round-icon">⟳</span><span
+                      style="margin-left:8px">⌄</span></span></div>
+                <div class="service-row" id="epargne">Epargne et Titres (1) <span class="service-value">6 313,90
+                    EUR</span><span class="service-actions"><span class="round-icon green">◉</span><span
+                      class="round-icon">♧</span><span class="round-icon">▤</span><span
+                      style="margin-left:8px">⌄</span></span></div>
+                <div class="service-row" id="assurance">Assurances et Prévoyance <span class="service-actions"><span
+                      class="round-icon">▤</span><span class="round-icon">♙</span><span class="round-icon">▤</span><span
+                      style="margin-left:8px">⌄</span></span></div>
+              </section>
+              <section class="panel">
+                <header class="panel-title"><span class="title-icon">♧</span>
+                  <h2>Pouvoirs</h2>
+                </header>
+                <div class="simple-body">
+                  <p>Procurations : <b>0</b></p>
+                  <p>Représentations : <b>0</b></p><a href="#">Gérer les pouvoirs</a>
+                </div>
+              </section>
+              <section class="panel">
+                <header class="panel-title"><span class="title-icon">⟳</span>
+                  <h2>Interactions</h2>
+                </header>
+                <div class="panel-body" style="padding:0 11px">
+                  <div class="interaction-row"><span class="rowico">▦</span>Aucun rendez-vous</div>
+                  <div class="interaction-row"><span class="rowico">♧</span>Aucun appel sur les 3 derniers mois <a
+                      href="#">Voir plus</a></div>
+                  <div class="interaction-row"><span class="rowico">▤</span>Aucun compte-rendu <a href="#">Voir plus</a>
+                  </div>
+                </div>
+              </section>
+            </div>
+            <div class="col col-right">
+              <section class="panel right-card">
+                <header class="panel-title"><span class="title-icon">▤</span>
+                  <h2>Mes activités à traiter</h2>
+                </header>
+                <div class="panel-body empty-access">
+                  <div class="illustration">
+                    <div class="browser-top"><i></i><i></i><i></i></div>
+                    <div class="side-mini"></div>
+                    <div class="chartbox">
+                      <div class="chart"></div>
+                    </div>
+                    <div class="lock">▣</div>
+                  </div>
+                  <h3>Habilitations manquantes</h3>
+                  <p>Vous n’êtes pas habilité(e) à consulter la liste des activités.<br>Si vous pensez qu'il s'agit
+                    d'une erreur, veuillez contacter votre manager.</p>
+                </div>
+              </section>
+              <section class="panel right-card ongoing">
+                <header class="panel-title"><span class="title-icon">▱</span>
+                  <h2>Dossiers en cours</h2>
+                </header>
+                <div class="panel-body">
+                  <div class="section-label">Activités en cours</div>
+                  <div class="empty-access">
+                    <div class="illustration">
+                      <div class="browser-top"><i></i><i></i><i></i></div>
+                      <div class="side-mini"></div>
+                      <div class="chartbox">
+                        <div class="chart"></div>
+                      </div>
+                      <div class="lock">▣</div>
+                    </div>
+                    <h3>Habilitations manquantes</h3>
+                    <p>Vous n’êtes pas habilité(e) à consulter la liste des activités.<br>Si vous pensez qu'il s'agit
+                      d'une erreur, veuillez contacter votre manager.</p>
+                  </div>
+                  <div class="demand-label">Demandes en cours</div>
+                  <div class="demand-empty">
+                    <div class="empty-box"></div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+
+</html>
