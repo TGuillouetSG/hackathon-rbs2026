@@ -1,73 +1,67 @@
-# Hackathon Starter Module
+# Foundry CSV analysis starter
 
-Small Python example for calling an Azure AI Foundry deployment through the
-OpenAI-compatible Responses API, including a function tool call.
+`main.py` runs a fixed LangGraph workflow: `START -> aggregation -> summary -> END`.
+There are two independently callable tools:
 
-## Getting Started
+- `aggregate(csv_path, objective, run_dir)` profiles the CSV, generates `analysis.py`,
+  executes it in Foundry Code Interpreter, and saves a validated `aggregation.csv`.
+- `summarize(aggregation_path, objective)` reads the saved aggregates and uses its
+  dedicated `SUMMARY_PROMPT` to write `report.json` with summary, questions, and insights.
 
-The starter folder contains:
-- `main.py` - Runnable example that asks the model an arithmetic question
-- `client.py` - Foundry client and Responses API integration
-- `tools.py` - `calculate` tool definition and implementation
-- `sanity.py` - Direct connectivity check for a configured deployment
-- `pyproject.toml` and `uv.lock` - Project metadata and locked dependencies
+`csv_agent.py` contains only graph wiring and the public `run()` entry point.
+`csv_tools.py` contains the tools, prompts, and artifact validation. The graph always
+aggregates before summarizing; no supervisor or model-selected tool routing is needed.
 
-The starter uses the `.env` file in this folder. Create it once at
-`hackathon-rbs2026/starter/.env`.
+## Setup
 
-### Setup Steps for Python
-
-```bash
-cd starter
-# Create .env and add your Azure OpenAI endpoint, key, and deployment name
-uv sync
-uv run main.py
-```
-
-On Windows, run `setup\install-host.bat` from the repository root first and restart
-your computer. Then run the commands above; `uv sync` creates the local environment.
-
-## Configuration
-
-The client loads `.env` from the `starter` directory. It requires these values
-from the deployment outputs and Azure AI Foundry resource keys:
+Use Python 3.10 or later and install the locked dependencies with `uv sync` from this
+directory. Copy `.env.example` to `.env` and set:
 
 ```env
-AZURE_OPENAI_ENDPOINT=https://foundry-hackathon-rbs2026-<teamname>.services.ai.azure.com/openai/v1
-AZURE_OPENAI_API_KEY=your-api-key-here
-AZURE_OPENAI_DEPLOYMENT_NAME=your-deployment-name
+AZURE_OPENAI_API_KEY=your-api-key
+AZURE_OPENAI_ENDPOINT=https://your-account.openai.azure.com
+AZURE_OPENAI_DEPLOYMENT_NAME=your-model-deployment
 ```
 
-Replace the placeholders with your actual values. The client normalizes the
-endpoint to end in `/openai/v1` and removes an `/api/projects/...` suffix if
-one is supplied. `AZURE_OPENAI_API_VERSION` is not used by the current client.
+The app authenticates with the API key through `FoundryClient`. No `az login` or
+Foundry project endpoint is required. Use a deployment and region that support
+Code Interpreter in the Azure OpenAI Responses API. These same settings also
+serve the arithmetic and Flask examples.
 
-## What It Does
+## Run
 
-Running `uv run main.py`:
-1. Loads configuration from `.env`
-2. Creates a `FoundryClient` for the configured deployment
-3. Sends a French system prompt and arithmetic question to the Responses API
-4. Lets the model call `calculate` with an operation and two numbers
-5. Sends the tool result back using `previous_response_id`
-6. Prints the final answer
+```bash
+uv run tiny_ex.py
 
-You can use the client from another Python module as follows:
-
-```python
-from client import FoundryClient
-
-client = FoundryClient()
-answer = client.query(
-	"You are a helpful assistant.",
-	"What is 2 + 2?",
-)
-print(answer)
+# Or analyze your own CSV:
+uv run main.py path/to/data.csv "Compare the most relevant monthly metrics"
 ```
 
-The `calculate` tool supports `add`, `subtract`, `multiply`, and `divide`.
+`tiny_ex.py` creates six synthetic sales rows in a temporary CSV, runs the complete
+agent, and prints the saved artifact paths and report. It still needs a configured
+Azure OpenAI endpoint, API key, and model deployment; it does not use mock responses.
 
-## Customization
+Use `--output-dir path/to/results` to change where runs are saved. Each run creates
+its own directory with `profile.json`, `analysis.py`, `aggregation.csv`, and
+`report.json`. The CLI prints these absolute paths and the report as JSON. CSV inputs
+are limited to 10 MiB.
 
-To add another function tool, define its Responses API schema in `tools.py`,
-implement it there, and handle its function call in `FoundryClient.query`.
+Edit `AGGREGATION_PROMPT` and `SUMMARY_PROMPT` in `csv_tools.py` independently.
+Code generation receives only schema/profile information. The summary receives all
+validated aggregates and the objective, with no raw CSV attachment or execution tools.
+The interpreter's own model context can still see any raw values printed by generated code.
+
+Each successful run uses four model requests: profile, generate code, execute, summarize.
+Aggregation allows two repair attempts. Uploaded files are cleaned up on success or
+failure; model requests use `store=False` and do not maintain response conversations.
+The summary never runs after a failed aggregation. `final_answer` remains in the report
+for compatibility and contains the dedicated summary directly.
+
+The implementation uses [LangGraph StateGraph](https://reference.langchain.com/python/langgraph/graph/state/StateGraph)
+and [Azure OpenAI Responses with Code Interpreter](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses).
+
+Run local contract tests (no Azure requests):
+
+```bash
+uv run python -m unittest -v test_csv_agent
+```

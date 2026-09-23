@@ -21,7 +21,7 @@ class FoundryClient:
         )
         self.deployment_name = os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME')
 
-        if not self.api_key or not self.endpoint or not self.deployment_name:
+        if not self.api_key or not configured_endpoint or not self.deployment_name:
             raise ValueError(
                 'AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, and '
                 'AZURE_OPENAI_DEPLOYMENT_NAME must be set in .env file'
