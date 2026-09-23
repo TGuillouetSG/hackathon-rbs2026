@@ -1,17 +1,17 @@
 
-from pathlib import Path
-from flask import Flask
+from flask import Flask, render_template
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 @app.route("/")
 def index():
-    index_path = Path(__file__).resolve().parent / 'pages' / 'index.html'
-    with open(index_path, 'r') as file:
-        return file.read()
+    return render_template('index.html')
+
+@app.route("/rdv")
+def rdv():
+    return render_template('rdv.html')
 
 @app.route("/test")
 def test_get():
     print("Hello World !")
-
     return "test"
