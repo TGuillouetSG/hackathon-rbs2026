@@ -20,6 +20,17 @@ TOOLS = [
             'additionalProperties': False,
         },
         'strict': True,
+    },
+    {
+        'type': 'function',
+        'name': 'summary',
+        'description': 'Summarize the results of the client\'s aggregates of transactions',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'results_file_path': { 'type': 'string' }
+            }
+        }
     }
 ]
 
@@ -39,9 +50,17 @@ def calculate(operation: str, first: float, second: float) -> float:
     raise ValueError(f'Unknown operation: {operation}')
 
 
+def summary(results_file_path: str):
+    with open(results_file_path, 'r') as file:
+        return file.read()
+
+
 def execute_tool(name: str, arguments: str) -> str:
     if name == 'calculate':
         result = calculate(**json.loads(arguments))
         return str(result)
+    if name == "summary":
+        result = summary(**json.loads(arguments))
+        return result
 
     raise ValueError(f'Unknown tool: {name}')

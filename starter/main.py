@@ -1,22 +1,11 @@
 from client import FoundryClient
+from config import settings
 
 
 def main() -> None:
     client = FoundryClient()
-
-    system_prompt = (
-        "You are a helpful assistant. Use the calculate tool when arithmetic "
-        "is needed. You should always answer in French in full sentences."
-    )
-    user_query = (
-        "J'ai acheté 12 caisses de fruits pour un montant total de 180 €. "
-        "Chaque caisse contient 15 kg de fruits. Je vends l'intégralité du stock à 2,50 € le kilo. "
-        "Combien j'ai gagné au total ?"
-    )
-
-    print(f"Query: {user_query}")
-    answer = client.query(system_prompt, user_query)
-    print(f"Answer: {answer}")
+    answer = client.query(settings.prompts.summary_system_prompt, settings.prompts.summary_user_prompt)
+    print(answer)
 
 
 if __name__ == '__main__':
