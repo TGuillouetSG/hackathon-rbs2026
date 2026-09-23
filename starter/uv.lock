@@ -132,6 +132,31 @@ wheels = [
 ]
 
 [[package]]
+name = "dynaconf"
+version = "3.3.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.10'",
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5f/c8/6bf1aa9e219485189f92bf68def0ef46c7292ecf0399757c17754988fb4b/dynaconf-3.3.0.tar.gz", hash = "sha256:923b8a497eda5457d88ec2f30389a564f7f5faaeb83399b027f0a6c50cf4516f", size = 325285, upload-time = "2026-06-24T15:36:22.214Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c9/a2/e1846073fc38df13c508a167b536119088294532cee48ee80da71e7a2cdd/dynaconf-3.3.0-py3-none-any.whl", hash = "sha256:8c7cfd5964b964d8b92b4d17e9b634d1cb8b9ea2a503280c116bcc241c2d3ca2", size = 270109, upload-time = "2026-06-24T15:36:20.687Z" },
+]
+
+[[package]]
+name = "dynaconf"
+version = "3.3.5"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.12' and sys_platform == 'emscripten'",
+    "(python_full_version >= '3.10' and python_full_version < '3.12') or (python_full_version >= '3.10' and sys_platform != 'emscripten')",
+]
+sdist = { url = "https://files.pythonhosted.org/packages/71/e4/723ba469856bb493c948985e5bd562c8a65f2b93e70c896e9764ab76de00/dynaconf-3.3.5.tar.gz", hash = "sha256:a08f6ab44025034ef3c9f86b32548ab01efd4039094a74bd9f028a43c63d016f", size = 333426, upload-time = "2026-08-05T19:50:25.16Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/95/41/b38501c34c40c3261868a2af8ed5fffe3e6d889c680638708de27eb57788/dynaconf-3.3.5-py3-none-any.whl", hash = "sha256:b3b4a753d5c866fc85466b65fc58d4954f6ed7dc8aa67f2b15bcbfd85d184687", size = 271426, upload-time = "2026-08-05T19:50:23.802Z" },
+]
+
+[[package]]
 name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -176,6 +201,8 @@ name = "hackathon-starter"
 version = "1.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "dynaconf", version = "3.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "dynaconf", version = "3.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "flask" },
     { name = "openai", version = "2.48.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "openai", version = "3.14.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
@@ -184,6 +211,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "dynaconf", specifier = ">=3.3.0" },
     { name = "flask", specifier = "==3.1.3" },
     { name = "openai", specifier = ">=1.0.0" },
     { name = "python-dotenv", specifier = "==1.0.0" },
