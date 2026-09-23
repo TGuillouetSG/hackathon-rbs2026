@@ -156,7 +156,7 @@ class CsvTools:
         logger.info("Generating analysis.py from the dataset profile")
         response = self.openai.responses.create(
             model=self.model, store=False,
-            instructions=settings.prompts.aggregation_prompt,
+            instructions=settings.prompts.aggregator_prompt,
             input=json.dumps({"objective": objective, "profile": profile, "previous_error": error}),
         )
         code = _plain_code(response.output_text)
@@ -241,7 +241,7 @@ class CsvTools:
                         script_file = self.openai.files.create(purpose="assistants", file=handle)
                     file_ids.append(script_file.id)
                     response = self._respond(
-                        [uploaded.id, script_file.id], settings.promptscode_interpreter_execution_instructions,
+                        [uploaded.id, script_file.id], settings.prompts.code_interpreter_execution_instructions,
                         "Execute the uploaded analysis.py exactly as provided. "
                         "Cite the generated aggregation.csv file.",
                     )
