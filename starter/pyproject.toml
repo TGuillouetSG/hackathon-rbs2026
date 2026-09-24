@@ -10,7 +10,8 @@ dependencies = [
     "dynaconf>=3.3.0",
     "langgraph>=1.0,<2",
     "langchain-core>=1.0,<2",
-    "pydantic>=2,<3"
+    "pydantic>=2,<3",
+    "pandas>=2.3.3",
 ]
 
 [build-system]

@@ -106,7 +106,7 @@ class CsvAnalysisAgent:
         graph.add_edge("summary", END)
         return graph.compile()
 
-    def run(self, csv_path: Path, objective: str, output_dir: Path,
+    def run(self, csv_path: Path, prestations_csv_path: Path, objective: str, output_dir: Path,
             on_step: Callable[[str], None] | None = None) -> dict[str, Any]:
         logger.info("Starting CSV analysis for %s", csv_path)
         source = import_csv(csv_path)

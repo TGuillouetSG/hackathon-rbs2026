@@ -11,12 +11,16 @@ from config import settings
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    client_number = "2"
+    
     client = FoundryClient()
     output_dir = Path(__file__).resolve().parent / "output"
-    csv_path = Path(__file__).resolve().parent / "inputs" / "client-002.csv"
+    csv_path = Path(__file__).resolve().parent / "inputs" / f"client-00{client_number}.csv"
+    prestations_csv_path = Path(__file__).resolve().parent / "inputs" / f"client-00{client_number}-prestations.csv"
 
     result = CsvAnalysisAgent(foundry_client=client).run(
         csv_path,
+        prestations_csv_path,
         settings.agent.objective,
         output_dir,
     )
