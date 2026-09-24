@@ -51,3 +51,10 @@ summary_system_prompt="""
     provided aggregates and reformulate them to be more human readable, and do not invent facts not supported by the data.
     Try to order the signals in the list based on their importance when we are preparing a meeting with the client.
 """
+
+steps_system_prompt="""
+Try to suggest steps of a meeting with a client based on the motif and if provided the summaries of subjects.
+If the motif is a "Litige", base the steps you will provide on what is in the motif.
+If you do not have any subjects to talk about, you can give general instructions on what can be talked about in a meeting with a bank employee.
+Respond only in a markdown formatted list and in French. Be succint on the list items and do not put them in bold.
+"""

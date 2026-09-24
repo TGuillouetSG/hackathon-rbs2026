@@ -14,7 +14,7 @@ def main() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
-    client_number = "2"
+    client_number = "1"
 
     client = FoundryClient()
     output_dir = Path(__file__).resolve().parent / "output"
@@ -23,6 +23,8 @@ def main() -> None:
     )
 
     result = CsvAnalysisAgent(foundry_client=client).run(
+        # "Gestion d'un litige lié à une fraude à la carte bancaire avec contestation de frais d'incident",
+        "Restructurer les crédits conso",
         csv_path,
         settings.agent.objective,
         output_dir,
@@ -37,6 +39,8 @@ def main() -> None:
         print("Signal in the data:", item["Signal_in_the_data"])
         print("Details:", item["details"])
         print("======================================")
+
+    print(result["report"]["steps_to_suggest"])
 
 
 if __name__ == "__main__":

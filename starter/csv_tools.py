@@ -341,3 +341,25 @@ class CsvTools:
         )
         logger.info("Saved CSV analysis report: %s", report_path)
         return {"report_path": str(report_path), "report": report}
+
+    def steps_to_suggest(self, motif: str, report: dict | None):
+        """Suggest what can be said by the bank employee"""
+        response = self.client.responses.parse(
+            model=self.summary_model,
+            store=False,
+            input=[{ "role": "system", "content": settings.prompts.steps_system_prompt }, { "role": "user", "content": f"Motif du rendez-vous: {motif}, Sujets à aborder: {[] if report is None else report["items"]}" }],
+            timeout=FOUNDRY_REQUEST_TIMEOUT_SECONDS,
+        )
+
+        if report is None:
+            report = {
+                "selected_aggregates": {},
+                "items": [],
+            }
+        report["steps_to_suggest"] = response.output_text,
+
+        report_path = self.run_dir / "report.json"
+        report_path.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        return { "report_path": report_path, "report": report }

@@ -25,6 +25,7 @@ def main() -> None:
 
     client = FoundryClient()
     result = CsvAnalysisAgent(foundry_client=client).run(
+        "Litige avec le client",
         args.csv_file, args.objective, args.output_dir
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
