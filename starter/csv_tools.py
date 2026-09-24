@@ -355,7 +355,13 @@ class CsvTools:
         response = self.client.responses.parse(
             model=self.summary_model,
             store=False,
-            input=[{ "role": "system", "content": settings.prompts.steps_system_prompt }, { "role": "user", "content": f"Motif du rendez-vous: {motif}, Sujets à aborder: {[] if report is None else report["items"]}" }],
+            input=[
+                {"role": "system", "content": settings.prompts.steps_system_prompt},
+                {
+                    "role": "user",
+                    "content": f"Motif du rendez-vous: {motif}, Sujets à aborder: {[] if report is None else report['items']}",
+                },
+            ],
             timeout=FOUNDRY_REQUEST_TIMEOUT_SECONDS,
         )
 
@@ -364,10 +370,10 @@ class CsvTools:
                 "selected_aggregates": {},
                 "items": [],
             }
-        report["steps_to_suggest"] = response.output_text,
+        report["steps_to_suggest"] = response.output_text.strip()
 
         report_path = self.run_dir / "report.json"
         report_path.write_text(
             json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        return { "report_path": report_path, "report": report }
+        return {"report_path": str(report_path), "report": report}

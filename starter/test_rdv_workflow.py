@@ -19,7 +19,11 @@ TOPICS = [
 
 class RdvWorkflowTests(unittest.TestCase):
     def test_workflow_streams_agent_report(self):
-        report = {"selected_aggregates": {"count": "3"}, "items": TOPICS}
+        report = {
+            "selected_aggregates": {"count": "3"},
+            "items": TOPICS,
+            "steps_to_suggest": "- Accueillir le client.\n- Explorer ses besoins.",
+        }
         with (
             patch("server.app._appointment_report", return_value=report) as run,
             self.assertLogs(app.logger.name, level="INFO") as logs,
@@ -100,15 +104,37 @@ class RdvWorkflowTests(unittest.TestCase):
             ],
         )
 
+    def test_suggestion_node_advances_to_brief(self):
+        def suggested_report(customer_id, on_step=None):
+            for node in ("profile", "write", "steps_to_suggest"):
+                on_step(node)
+            return {"items": [], "steps_to_suggest": "- Accueillir le client."}
+
+        with patch("server.app._appointment_report", side_effect=suggested_report):
+            response = app.test_client().post("/api/rdv/workflow")
+            events = [
+                json.loads(line[6:])
+                for line in response.get_data(as_text=True).splitlines()
+                if line.startswith("data: ")
+            ]
+        self.assertIn({"step": "context", "status": "complete"}, events)
+        self.assertTrue(
+            any(event.get("step") == "brief" and event["status"] == "running" for event in events)
+        )
+        self.assertEqual(events[-2]["report"]["steps_to_suggest"], "- Accueillir le client.")
+
     def test_agent_uses_tiny_ex_input_and_objective_without_truncating_report(self):
         report = {
             "report": {
                 "selected_aggregates": {"count": "3"},
-                "items": TOPICS + [{
-                    "Insight": "Extra",
-                    "signal_in_the_data": "Signal extra.",
-                    "details": "Détails extra.",
-                }],
+                "items": TOPICS
+                + [
+                    {
+                        "Insight": "Extra",
+                        "signal_in_the_data": "Signal extra.",
+                        "details": "Détails extra.",
+                    }
+                ],
             }
         }
         with (
@@ -126,8 +152,7 @@ class RdvWorkflowTests(unittest.TestCase):
             )
         self.assertTrue(
             any(
-                "LangGraph agent returned to RDV API" in line
-                and "item_count=4" in line
+                "LangGraph agent returned to RDV API" in line and "item_count=4" in line
                 for line in logs.output
             )
         )
@@ -164,7 +189,9 @@ class RdvWorkflowTests(unittest.TestCase):
             agent.return_value.run.return_value = report
             self.assertEqual(_appointment_report(), {"items": TOPICS[:1]})
 
-        with patch("server.app._appointment_report", return_value={"items": TOPICS[:1]}):
+        with patch(
+            "server.app._appointment_report", return_value={"items": TOPICS[:1]}
+        ):
             response = app.test_client().post("/api/rdv/workflow")
             events = [
                 json.loads(line[6:])
@@ -239,12 +266,14 @@ class RdvWorkflowTests(unittest.TestCase):
 
     def test_customer_routes_preserve_selection_and_reject_unknown_ids(self):
         client = app.test_client()
-        default = client.get("/").get_data(as_text=True)
+        default_response = client.get("/")
+        self.assertEqual(default_response.status_code, 200)
+        default = default_response.get_data(as_text=True)
         marc = client.get("/?customer=marc").get_data(as_text=True)
         rdv = client.get("/rdv?customer=marc").get_data(as_text=True)
-        self.assertIn("Mme Françoise Martin", default)
+        self.assertIn("Mme. Françoise Martin (002)", default)
         self.assertIn("M. Marc DELORME", marc)
-        self.assertNotIn("<strong>Mme Françoise Martin</strong>", marc)
+        self.assertNotIn("<strong>Mme. Françoise Martin (002)</strong>", marc)
         self.assertNotIn("Risque de pli non distribué", marc)
         self.assertIn("/rdv?customer=marc", marc)
         self.assertIn("M. Marc DELORME", rdv)
@@ -260,7 +289,9 @@ class RdvWorkflowTests(unittest.TestCase):
         )
 
     def test_workflow_receives_selected_customer(self):
-        with patch("server.app._appointment_report", return_value={"items": TOPICS}) as analyze:
+        with patch(
+            "server.app._appointment_report", return_value={"items": TOPICS}
+        ) as analyze:
             app.test_client().post("/api/rdv/workflow?customer=marc").get_data()
         self.assertEqual(analyze.call_args.args[0], "marc")
 

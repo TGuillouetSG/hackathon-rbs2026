@@ -53,8 +53,8 @@
                   <section class="brief-card" aria-labelledby="attention-title"><h4 id="attention-title"><span aria-hidden="true">◈</span> Points d’attention</h4><ul class="attention-list">{% for label, detail in view.alerts %}<li><strong>{{ label }}</strong><span>{{ detail }}</span></li>{% else %}<li><span>Aucun point d’attention signalé.</span></li>{% endfor %}</ul></section>
                   <section class="brief-card topics-card" aria-labelledby="topics-title"><h4 id="topics-title"><span aria-hidden="true">◎</span> Sujets à explorer</h4><div class="workflow-warning" id="topics-warning" role="status" hidden></div><div class="workflow-error" id="workflow-error" role="alert" hidden></div><div id="topics-list">Analyse en cours…</div></section>
                 </div>
-                <div class="brief-footer"><button type="button" class="agenda-button" id="agenda-button" aria-expanded="false" aria-controls="agenda-panel">✦ Générer ma trame de RDV</button><p id="topics-source">Les sujets du client sélectionné sont en cours d’analyse.</p></div>
-                <section class="agenda-panel" id="agenda-panel" hidden aria-labelledby="agenda-title"><h4 id="agenda-title">Trame de rendez-vous proposée</h4><ol id="agenda-list"></ol></section>
+                <div class="brief-footer"><button type="button" class="agenda-button" id="agenda-button" aria-expanded="false" aria-controls="agenda-panel">✦ Afficher ma trame de RDV</button><p id="topics-source">Les sujets du client sélectionné sont en cours d’analyse.</p></div>
+                <section class="agenda-panel" id="agenda-panel" hidden aria-labelledby="agenda-title"><h4 id="agenda-title">Trame de rendez-vous proposée</h4><ol id="agenda-list"></ol><div id="agenda-questions" hidden><h5>Questions sélectionnées</h5><ul id="agenda-questions-list"></ul></div></section>
               </section>
             </div>
           </section>
@@ -73,6 +73,8 @@
       const topicsWarning = document.getElementById('topics-warning');
       const topicsSource = document.getElementById('topics-source');
       const agendaList = document.getElementById('agenda-list');
+      const agendaQuestions = document.getElementById('agenda-questions');
+      const agendaQuestionsList = document.getElementById('agenda-questions-list');
       const error = document.getElementById('workflow-error');
       const agendaButton = document.getElementById('agenda-button');
       const agendaPanel = document.getElementById('agenda-panel');
@@ -92,6 +94,7 @@
       agendaButton.addEventListener('click', () => {
         agendaPanel.hidden = !agendaPanel.hidden;
         agendaButton.setAttribute('aria-expanded', String(!agendaPanel.hidden));
+        agendaButton.textContent = agendaPanel.hidden ? '✦ Afficher ma trame de RDV' : '✦ Masquer ma trame de RDV';
         if (!agendaPanel.hidden) agendaPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
 
@@ -130,19 +133,26 @@
       }
 
       let reportItems = [];
+      let suggestedSteps = [];
+
+      function parseSuggestedSteps(value) {
+        // Older reports stored the model's markdown text inside a one-item array.
+        const markdown = Array.isArray(value) ? value[0] : value;
+        if (typeof markdown !== 'string') return [];
+        return markdown.split(/\r?\n/).map(line => line.trim())
+          .filter(Boolean)
+          .map(line => line.replace(/^[-*+]\s+|^\d+[.)]\s+/, '').trim())
+          .filter(Boolean);
+      }
 
       function updateAgenda() {
-        agendaList.replaceChildren(element('li', 'Accueil et confirmation du motif du rendez-vous.'));
-        reportItems.forEach((item, index) => {
-          const agendaItem = element('li', item.Insight);
-          const selected = [...topicsList.querySelectorAll(`input[data-topic="${index}"]:checked`)];
-          if (selected.length) {
-            const questions = element('ul');
-            selected.forEach(input => questions.append(element('li', input.value)));
-            agendaItem.append(questions);
-          }
-          agendaList.append(agendaItem);
-        });
+        const steps = suggestedSteps.length
+          ? suggestedSteps
+          : ['Accueil et confirmation du motif du rendez-vous.', ...reportItems.map(item => item.Insight)];
+        agendaList.replaceChildren(...steps.map(step => element('li', step)));
+        const selected = [...topicsList.querySelectorAll('input[data-topic]:checked')];
+        agendaQuestionsList.replaceChildren(...selected.map(input => element('li', input.value)));
+        agendaQuestions.hidden = !selected.length;
       }
 
       topicsList.addEventListener('change', event => {
@@ -151,6 +161,7 @@
 
       function showReport(report) {
         reportItems = report.items;
+        suggestedSteps = parseSuggestedSteps(report.steps_to_suggest);
         topicsList.replaceChildren();
         if (!report.items.length) {
           topicsList.append(element('p', 'Aucun sujet complet issu du CSV n’est disponible pour ce rendez-vous.'));
@@ -186,6 +197,11 @@
           topicsList.append(topic);
         });
         updateAgenda();
+        if (suggestedSteps.length) {
+          agendaPanel.hidden = false;
+          agendaButton.setAttribute('aria-expanded', 'true');
+          agendaButton.textContent = '✦ Masquer ma trame de RDV';
+        }
       }
 
       function handleEvent(rawData) {

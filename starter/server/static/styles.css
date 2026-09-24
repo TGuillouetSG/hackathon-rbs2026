@@ -1061,6 +1061,7 @@ a {
 .agenda-panel h4 { margin: 0 0 8px; font-size: 14px; }
 .agenda-panel h5 { margin: 12px 0 4px; font-size: 11px; }
 .agenda-panel ol { margin: 0; padding-left: 19px; }
+.agenda-panel ul { margin: 0; padding-left: 19px; }
 .agenda-panel p { margin: 0; white-space: pre-wrap; }
 
 /* RDV page refresh */

@@ -57,17 +57,18 @@ uv run python -m unittest -v test_csv_agent
 ## Appointment page
 
 The demo has two synthetic customers configured in `data/customers.json`:
-Annie (`annie`, the default) and Marc (`marc`). Use the visible switcher on `/`,
+Françoise (`françoise`, the default) and Marc (`marc`). Use the visible switcher on `/`,
 or open `/?customer=marc` and `/rdv?customer=marc` directly. Unknown customer IDs
 return 404. Both pages and the RDV workflow use the same selected customer.
 
-Annie's missing-contact scenario uses `inputs/client-002.csv`, the same file as
+Françoise's missing-contact scenario uses `inputs/client-002.csv`, the same file as
 `tiny_ex.py`; Marc's possible property-purchase scenario uses
 `data/marc_account_operations.csv`.
 The page at `/rdv` automatically calls `CsvAnalysisAgent.run` through
 `POST /api/rdv/workflow?customer=<id>` with the same objective as `tiny_ex.py`
 and displays its full structured report. Each card shows an insight, its data
-signal, and suggested questions. The meeting outline includes those questions.
+signal, and suggested questions. The meeting outline displays the agent's
+`steps_to_suggest` report output, with checked topic questions underneath.
 The profile-based brief remains visible if analysis fails. Agent artifacts are
 saved under `starter/output/rdv/<id>/` in unique per-run subdirectories.
 When the agent returns no complete topic, the page displays an empty-state

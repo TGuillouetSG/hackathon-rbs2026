@@ -74,6 +74,7 @@ def _appointment_report(customer_id=DEFAULT_CUSTOMER_ID, on_step=None):
     csv_path = customer_csv(customer)
 
     report = CsvAnalysisAgent().run(
+        customer.motif,
         csv_path,
         settings.agent.objective,
         STARTER_DIR / "output" / "rdv" / customer_id,
@@ -90,7 +91,7 @@ def _appointment_report(customer_id=DEFAULT_CUSTOMER_ID, on_step=None):
 def rdv_workflow():
     """Stream progress and the CSV agent's appointment report."""
     customer = _selected_customer()
-    customer_id = customer["id"]
+    customer_id = customer.id
     request_id = uuid.uuid4().hex
     started_at = time.monotonic()
     app.logger.info("RDV workflow started (request_id=%s)", request_id)
@@ -176,17 +177,18 @@ def rdv_workflow():
                                 "message": last_message[message_index],
                             }
                         )
-                    elif value == "summary":
+                    elif value in ("summary", "steps_to_suggest"):
                         if active_step == "context":
                             yield event({"step": "context", "status": "complete"})
-                        active_step = "brief"
-                        yield event(
-                            {
-                                "step": "brief",
-                                "status": "running",
-                                "message": last_message[message_index],
-                            }
-                        )
+                        if active_step != "brief":
+                            active_step = "brief"
+                            yield event(
+                                {
+                                    "step": "brief",
+                                    "status": "running",
+                                    "message": last_message[message_index],
+                                }
+                            )
                     continue
 
                 # A mocked or alternate agent may return without node updates.

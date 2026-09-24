@@ -46,7 +46,9 @@ class CsvAnalysisAgent:
         }
         return json.dumps(request, ensure_ascii=False)
 
-    def _make_graph(self, tools: CsvTools, on_step: Callable[[str], None] | None = None):
+    def _make_graph(
+        self, tools: CsvTools, on_step: Callable[[str], None] | None = None
+    ):
         write_tool = StructuredTool.from_function(tools.write_python_code)
         execute_tool = StructuredTool.from_function(tools.execute_python_code)
         summary_tool = StructuredTool.from_function(tools.summarize)
@@ -62,7 +64,9 @@ class CsvAnalysisAgent:
             logger.info("Generating CSV analysis code")
             try:
                 generated = write_tool.invoke({"prompt": self._prompt(state)})
-                logger.info("Generated CSV analysis code (code_id=%s)", generated["code_id"])
+                logger.info(
+                    "Generated CSV analysis code (code_id=%s)", generated["code_id"]
+                )
                 return {**generated, "error": ""}
             except (SyntaxError, ValueError) as exc:
                 logger.warning("Code generation failed: %s", exc)
@@ -73,7 +77,11 @@ class CsvAnalysisAgent:
                 on_step("execute")
             logger.info("Executing CSV analysis code (code_id=%s)", state["code_id"])
             result = execute_tool.invoke({"code_id": state["code_id"]})
-            logger.info("CSV analysis execution finished (success=%s, returncode=%s)", result["success"], result["returncode"])
+            logger.info(
+                "CSV analysis execution finished (success=%s, returncode=%s)",
+                result["success"],
+                result["returncode"],
+            )
             return {
                 "execution": result,
                 "aggregation_path": result["aggregation_path"] or "",
@@ -81,7 +89,7 @@ class CsvAnalysisAgent:
             }
 
         def after_write(state: CsvState) -> str:
-            if "litige" in state.get('motif', '').lower():
+            if "litige" in state.get("motif", "").lower():
                 return "steps_to_suggest"
 
             if state.get("code_id"):
@@ -102,19 +110,20 @@ class CsvAnalysisAgent:
             if on_step:
                 on_step("summary")
             logger.info("Generating CSV analysis summary")
-            return summary_tool.invoke({
-                "aggregation_path": state["aggregation_path"],
-                "objective": state["objective"],
-            })
+            return summary_tool.invoke(
+                {
+                    "aggregation_path": state["aggregation_path"],
+                    "objective": state["objective"],
+                }
+            )
 
         def steps_to_suggest(state: CsvState) -> dict[str, Any]:
             if on_step:
                 on_step("steps_to_suggest")
             logger.info("Suggesting steps")
-            return steps_to_suggest_tool.invoke({
-                "motif": state["motif"],
-                "report": state.get("report")
-            })
+            return steps_to_suggest_tool.invoke(
+                {"motif": state["motif"], "report": state.get("report")}
+            )
 
         graph = StateGraph(CsvState)
         graph.add_node("write", write)
@@ -122,14 +131,34 @@ class CsvAnalysisAgent:
         graph.add_node("execute", execute)
         graph.add_node("summary", summarize)
         graph.add_edge(START, "write")
-        graph.add_conditional_edges("write", after_write, {"execute": "execute", "steps_to_suggest": "steps_to_suggest", "failed": END})
-        graph.add_conditional_edges("execute", after_execute, {"summary": "summary", "failed": END})
-        graph.add_conditional_edges("summary", after_summary, {"steps_to_suggest": "steps_to_suggest", "failed": END})
+        graph.add_conditional_edges(
+            "write",
+            after_write,
+            {
+                "execute": "execute",
+                "steps_to_suggest": "steps_to_suggest",
+                "failed": END,
+            },
+        )
+        graph.add_conditional_edges(
+            "execute", after_execute, {"summary": "summary", "failed": END}
+        )
+        graph.add_conditional_edges(
+            "summary",
+            after_summary,
+            {"steps_to_suggest": "steps_to_suggest", "failed": END},
+        )
         graph.add_edge("steps_to_suggest", END)
         return graph.compile()
 
-    def run(self, motif: str, csv_path: Path, objective: str, output_dir: Path,
-            on_step: Callable[[str], None] | None = None) -> dict[str, Any]:
+    def run(
+        self,
+        motif: str,
+        csv_path: Path,
+        objective: str,
+        output_dir: Path,
+        on_step: Callable[[str], None] | None = None,
+    ) -> dict[str, Any]:
         logger.info("Starting CSV analysis for %s", csv_path)
         source = import_csv(csv_path)
         if not objective.strip():
@@ -142,10 +171,14 @@ class CsvAnalysisAgent:
             on_step("profile")
         profile = tools.profile()
         graph = self._make_graph(tools, on_step=on_step)
-        state = graph.invoke({"motif": motif, "objective": objective, "profile": profile})
+        state = graph.invoke(
+            {"motif": motif, "objective": objective, "profile": profile}
+        )
         if "report" not in state:
             logger.error("CSV analysis failed after one generation")
-            raise RuntimeError(f"CSV analysis failed after one generation: {state.get('error', 'unknown error')}")
+            raise RuntimeError(
+                f"CSV analysis failed after one generation: {state.get('error', 'unknown error')}"
+            )
         logger.info("CSV analysis completed: %s", state["report_path"])
         return {
             "motif": state["motif"],

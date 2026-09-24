@@ -58,7 +58,8 @@ class FakeResponses:
 class CsvAgentTests(unittest.TestCase):
     def test_summary_item_has_the_api_topic_fields(self):
         self.assertEqual(
-            set(SummaryItem.model_fields), {"Insight", "signal_in_the_data", "details", "questions"}
+            set(SummaryItem.model_fields),
+            {"Insight", "signal_in_the_data", "details", "questions"},
         )
         item = SummaryItem.model_validate(
             {
@@ -69,7 +70,8 @@ class CsvAgentTests(unittest.TestCase):
             }
         )
         self.assertEqual(
-            set(item.model_dump()), {"Insight", "signal_in_the_data", "details", "questions"}
+            set(item.model_dump()),
+            {"Insight", "signal_in_the_data", "details", "questions"},
         )
         self.assertEqual(item.questions, ["Comment expliquez-vous ce montant ?"])
         with self.assertRaises(ValidationError):
@@ -126,6 +128,30 @@ class CsvAgentTests(unittest.TestCase):
                 self.assertIn(expected_column, names)
                 self.assertGreater(profile["row_count"], 0)
 
+    def test_suggested_steps_are_saved_as_report_text(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "input.csv"
+            source.write_text("amount\n5\n", encoding="utf-8")
+            response = SimpleNamespace(output_text="- Accueillir le client.\n- Clarifier le besoin.\n")
+            foundry = SimpleNamespace(
+                deployment_name="fake",
+                client=SimpleNamespace(responses=SimpleNamespace(parse=lambda **_: response)),
+            )
+            tools = CsvTools(foundry, root / "run", source)
+            report = {"selected_aggregates": {}, "items": []}
+
+            result = tools.steps_to_suggest("Restructurer les crédits", report)
+
+            self.assertEqual(
+                result["report"]["steps_to_suggest"],
+                "- Accueillir le client.\n- Clarifier le besoin.",
+            )
+            self.assertEqual(
+                json.loads(Path(result["report_path"]).read_text(encoding="utf-8")),
+                result["report"],
+            )
+
     def test_success_executes_saved_program_and_reports_files(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -153,7 +179,9 @@ class CsvAgentTests(unittest.TestCase):
                 result["report"]["items"][0]["questions"],
                 ["Comment expliquez-vous ce montant ?"],
             )
-            saved_report = json.loads(Path(result["report_path"]).read_text(encoding="utf-8"))
+            saved_report = json.loads(
+                Path(result["report_path"]).read_text(encoding="utf-8")
+            )
             self.assertEqual(saved_report, result["report"])
             self.assertGreaterEqual(result["generation_seconds"], 0)
             self.assertEqual(len(responses.calls), 2)
