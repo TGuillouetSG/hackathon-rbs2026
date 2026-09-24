@@ -51,8 +51,15 @@
               </ol>
               <div class="workflow-status" id="workflow-status" role="status">Démarrage de la préparation…</div>
               <section class="workflow-result" id="workflow-result" hidden aria-labelledby="result-title">
-                <h3 id="result-title">Synthèse pour votre rendez-vous</h3>
-                <p id="result-text"></p>
+                <div class="brief-header"><div><span class="eyebrow">FICHE DE PRÉPARATION</span><h3 id="result-title">Votre prochain rendez-vous</h3><p>Mme Annie BERTOUD · Banque Privée · Conseiller Nicolas ZAOUI</p></div><span class="brief-ready">Prêt à consulter</span></div>
+                <div class="brief-grid">
+                  <section class="brief-card brief-actions" aria-labelledby="actions-title"><h4 id="actions-title"><span aria-hidden="true">✦</span> Actions suggérées avant le RDV</h4><ul><li>Confirmer le motif et la date du rendez-vous avec la cliente.</li><li>Demander la mise à jour de l’adresse, du téléphone et de l’e-mail.</li><li>Vérifier le risque de pli non distribué et compléter la profession.</li></ul></section>
+                  <section class="brief-card" aria-labelledby="essentiel-title"><h4 id="essentiel-title"><span aria-hidden="true">◉</span> L’essentiel en 30 secondes</h4><dl class="facts"><div><dt>Relation client</dt><dd>Depuis le 01/11/1994</dd></div><div><dt>Épargne et titres</dt><dd>6 313,90 € <small>montant affiché, à vérifier</small></dd></div><div><dt>Dernier RDV</dt><dd>Aucun rendez-vous affiché</dd></div><div><dt>Agence</dt><dd>Test Rabelais (0451)</dd></div></dl></section>
+                  <section class="brief-card" aria-labelledby="attention-title"><h4 id="attention-title"><span aria-hidden="true">◈</span> Points d’attention</h4><ul class="attention-list"><li><strong>Coordonnées</strong><span>Adresse à mettre à jour ; téléphone et e-mail à renseigner.</span></li><li><strong>Courrier</strong><span>Risque de pli non distribué signalé.</span></li><li><strong>Relation</strong><span>Aucun compte-rendu ni rendez-vous affiché.</span></li></ul></section>
+                  <section class="brief-card topics-card" aria-labelledby="topics-title"><h4 id="topics-title"><span aria-hidden="true">◎</span> 3 sujets à explorer</h4><div class="topic"><div><span class="topic-dot"></span><strong>Fiabiliser les coordonnées</strong></div><p>Comment joindre la cliente et sécuriser la réception des courriers ?</p><details><summary>Approfondir</summary><p>Confirmer l’adresse postale, le téléphone et l’e-mail avec la cliente, puis vérifier le signalement de pli non distribué.</p></details></div><div class="topic"><div><span class="topic-dot amber"></span><strong>Actualiser la situation</strong></div><p>La profession n’est pas renseignée dans le dossier.</p><details><summary>Approfondir</summary><p>Demander si sa situation professionnelle a changé et mettre le dossier à jour avec son accord.</p></details></div><div class="topic"><div><span class="topic-dot green"></span><strong>Comprendre les besoins</strong></div><p>Clarifier le motif du rendez-vous et les projets à venir.</p><details><summary>Approfondir</summary><p>Faire préciser les objectifs, l’horizon et les attentes de la cliente avant d’évoquer les solutions.</p></details></div></section>
+                </div>
+                <div class="brief-footer"><button type="button" class="agenda-button" id="agenda-button" aria-expanded="false" aria-controls="agenda-panel">✦ Générer ma trame de RDV</button><p>Les éléments ci-dessus proviennent de la synthèse client affichée dans cette démonstration.</p></div>
+                <section class="agenda-panel" id="agenda-panel" hidden aria-labelledby="agenda-title"><h4 id="agenda-title">Trame de rendez-vous proposée</h4><ol><li>Accueil et confirmation du motif du rendez-vous.</li><li>Vérification des coordonnées et de la réception des courriers.</li><li>Mise à jour de la situation professionnelle.</li><li>Échange sur les besoins et prochaines étapes.</li></ol><h5>Synthèse de l’assistant</h5><p id="result-text"></p></section>
               </section>
               <div class="workflow-error" id="workflow-error" role="alert" hidden></div>
             </div>
@@ -68,7 +75,15 @@
       const result = document.getElementById('workflow-result');
       const resultText = document.getElementById('result-text');
       const error = document.getElementById('workflow-error');
+      const agendaButton = document.getElementById('agenda-button');
+      const agendaPanel = document.getElementById('agenda-panel');
       let buffer = '';
+
+      agendaButton.addEventListener('click', () => {
+        agendaPanel.hidden = !agendaPanel.hidden;
+        agendaButton.setAttribute('aria-expanded', String(!agendaPanel.hidden));
+        if (!agendaPanel.hidden) agendaPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
 
       function updateStep(id, state) {
         const item = document.querySelector(`[data-step="${id}"]`);
@@ -96,7 +111,8 @@
 
       function handleEvent(event) {
         if (!event.data) return;
-        const data = JSON.parse(event.data);
+        let data;
+        try { data = JSON.parse(event.data); } catch { return; }
         if (data.step && data.status) updateStep(data.step, data.status);
         if (data.status === 'running') {
           const current = document.querySelector(`[data-step="${data.step}"] strong`);
@@ -105,8 +121,10 @@
         if (data.step === 'brief' && data.status === 'complete' && data.result) {
           resultText.textContent = data.result;
           result.hidden = false;
+          document.getElementById('workflow-steps').hidden = true;
+          status.hidden = true;
         }
-        if (data.status === 'done') status.textContent = 'Préparation terminée';
+        if (data.status === 'done' && result.hidden) status.textContent = 'Préparation terminée';
         if (data.status === 'error') {
           showError(data.message);
         }
