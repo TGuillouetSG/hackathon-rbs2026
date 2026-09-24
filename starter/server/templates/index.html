@@ -34,7 +34,6 @@
           <select id="customer-select" name="customer" onchange="this.form.submit()">
             {% for option in customers %}<option value="{{ option.id }}"{% if option.id == customer.id %} selected{% endif %}>{{ option.name }}</option>{% endfor %}
           </select>
-          <button type="submit">Afficher</button>
         </form>
       </div>
       <main class="content" id="synthese">
