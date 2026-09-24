@@ -5,8 +5,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from server.app import STARTER_DIR, app, _appointment_topics
-
+from server.app import STARTER_DIR, _appointment_report, app
 
 TOPICS = [
     {
@@ -19,9 +18,10 @@ TOPICS = [
 
 
 class RdvWorkflowTests(unittest.TestCase):
-    def test_workflow_streams_agent_topics(self):
+    def test_workflow_streams_agent_report(self):
+        report = {"selected_aggregates": {"count": "3"}, "items": TOPICS}
         with (
-            patch("server.app._appointment_topics", return_value=TOPICS) as run,
+            patch("server.app._appointment_report", return_value=report) as run,
             self.assertLogs(app.logger.name, level="INFO") as logs,
         ):
             response = app.test_client().post("/api/rdv/workflow")
@@ -32,7 +32,7 @@ class RdvWorkflowTests(unittest.TestCase):
             ]
         self.assertEqual(response.status_code, 200)
         self.assertEqual(events[-2]["step"], "brief")
-        self.assertEqual(events[-2]["topics"], TOPICS)
+        self.assertEqual(events[-2]["report"], report)
         self.assertEqual(events[-1], {"status": "done"})
         run.assert_called_once()
         self.assertTrue(any("RDV workflow started" in line for line in logs.output))
@@ -48,10 +48,10 @@ class RdvWorkflowTests(unittest.TestCase):
             on_step("profile")
             on_step("write")
             time.sleep(0.05)
-            return TOPICS
+            return {"items": TOPICS}
 
         with (
-            patch("server.app._appointment_topics", side_effect=slow_topics),
+            patch("server.app._appointment_report", side_effect=slow_topics),
             patch("server.app.WORKFLOW_HEARTBEAT_SECONDS", 0.01, create=True),
         ):
             response = app.test_client().post("/api/rdv/workflow")
@@ -74,9 +74,9 @@ class RdvWorkflowTests(unittest.TestCase):
         def graph_topics(customer_id, on_step=None):
             for node in ("profile", "write", "execute", "summary"):
                 on_step(node)
-            return TOPICS
+            return {"items": TOPICS}
 
-        with patch("server.app._appointment_topics", side_effect=graph_topics):
+        with patch("server.app._appointment_report", side_effect=graph_topics):
             response = app.test_client().post("/api/rdv/workflow")
             events = [
                 json.loads(line[6:])
@@ -100,30 +100,54 @@ class RdvWorkflowTests(unittest.TestCase):
             ],
         )
 
-    def test_agent_receives_selected_customers_csv_and_returns_three_items(self):
-        report = {"report": {"items": TOPICS + [{"Insight": "Extra"}]}}
+    def test_agent_uses_tiny_ex_input_and_objective_without_truncating_report(self):
+        report = {
+            "report": {
+                "selected_aggregates": {"count": "3"},
+                "items": TOPICS + [{
+                    "Insight": "Extra",
+                    "Signal_in_the_data": "Signal extra.",
+                    "details": "Détails extra.",
+                }],
+            }
+        }
         with (
             patch("csv_agent.CsvAnalysisAgent") as agent,
             self.assertLogs(app.logger.name, level="INFO") as logs,
         ):
             agent.return_value.run.return_value = report
-            self.assertEqual(_appointment_topics("annie"), TOPICS)
-            self.assertEqual(_appointment_topics("marc"), TOPICS)
+            self.assertEqual(
+                _appointment_report("annie"),
+                report["report"],
+            )
+            self.assertEqual(
+                _appointment_report("marc"),
+                report["report"],
+            )
         self.assertTrue(
             any(
                 "LangGraph agent returned to RDV API" in line
-                and "raw_item_count=4" in line
-                and "complete_topic_count=3" in line
+                and "item_count=4" in line
                 for line in logs.output
             )
         )
         self.assertEqual(
             agent.return_value.run.call_args_list[0].args[0],
-            STARTER_DIR / "data" / "demo_account_operations.csv",
+            STARTER_DIR / "inputs" / "client-002.csv",
         )
         self.assertEqual(
             agent.return_value.run.call_args_list[1].args[0],
             STARTER_DIR / "data" / "marc_account_operations.csv",
+        )
+        from config import settings
+
+        self.assertEqual(
+            agent.return_value.run.call_args_list[0].args[1],
+            settings.agent.objective,
+        )
+        self.assertEqual(
+            agent.return_value.run.call_args_list[1].args[1],
+            settings.agent.objective,
         )
         self.assertEqual(
             agent.return_value.run.call_args_list[0].args[2],
@@ -135,12 +159,12 @@ class RdvWorkflowTests(unittest.TestCase):
         )
 
     def test_one_supported_topic_does_not_require_three(self):
-        report = {"report": {"items": [TOPICS[0], {"Insight": "Incomplete"}]}}
+        report = {"report": {"items": TOPICS[:1]}}
         with patch("csv_agent.CsvAnalysisAgent") as agent:
             agent.return_value.run.return_value = report
-            self.assertEqual(_appointment_topics(), TOPICS[:1])
+            self.assertEqual(_appointment_report(), {"items": TOPICS[:1]})
 
-        with patch("server.app._appointment_topics", return_value=TOPICS[:1]):
+        with patch("server.app._appointment_report", return_value={"items": TOPICS[:1]}):
             response = app.test_client().post("/api/rdv/workflow")
             events = [
                 json.loads(line[6:])
@@ -148,15 +172,15 @@ class RdvWorkflowTests(unittest.TestCase):
                 if line.startswith("data: ")
             ]
         self.assertEqual(events[-2]["status"], "complete")
-        self.assertEqual(events[-2]["topics"], TOPICS[:1])
+        self.assertEqual(events[-2]["report"], {"items": TOPICS[:1]})
         self.assertNotIn("warning", events[-2])
         self.assertEqual(events[-1], {"status": "done"})
 
     def test_agent_returns_no_topics_without_demo_fallback(self):
         with patch("csv_agent.CsvAnalysisAgent") as agent:
             agent.return_value.run.return_value = {"report": {"items": []}}
-            self.assertEqual(_appointment_topics("annie"), [])
-            self.assertEqual(_appointment_topics("marc"), [])
+            self.assertEqual(_appointment_report("annie"), {"items": []})
+            self.assertEqual(_appointment_report("marc"), {"items": []})
 
     def test_invalid_generated_aggregation_reports_error(self):
         failure = RuntimeError(
@@ -175,12 +199,12 @@ class RdvWorkflowTests(unittest.TestCase):
                 if line.startswith("data: ")
             ]
         self.assertEqual(events[-1]["status"], "error")
-        self.assertNotIn("topics", events[-1])
+        self.assertNotIn("report", events[-1])
         self.assertTrue(any("RDV workflow failed" in line for line in logs.output))
 
     def test_no_complete_topics_still_finishes_with_warning(self):
         with (
-            patch("server.app._appointment_topics", return_value=[]),
+            patch("server.app._appointment_report", return_value={"items": []}),
             self.assertLogs(app.logger.name, level="WARNING") as logs,
         ):
             response = app.test_client().post("/api/rdv/workflow")
@@ -189,7 +213,7 @@ class RdvWorkflowTests(unittest.TestCase):
                 for line in response.get_data(as_text=True).splitlines()
                 if line.startswith("data: ")
             ]
-        self.assertEqual(events[-2]["topics"], [])
+        self.assertEqual(events[-2]["report"], {"items": []})
         self.assertEqual(
             events[-2]["warning"],
             "Aucun sujet étayé n'a été trouvé dans les opérations.",
@@ -200,7 +224,7 @@ class RdvWorkflowTests(unittest.TestCase):
     def test_workflow_failure_is_logged(self):
         with (
             patch(
-                "server.app._appointment_topics", side_effect=ValueError("CSV missing")
+                "server.app._appointment_report", side_effect=ValueError("CSV missing")
             ),
             self.assertLogs(app.logger.name, level="ERROR") as logs,
         ):
@@ -236,13 +260,13 @@ class RdvWorkflowTests(unittest.TestCase):
         )
 
     def test_workflow_receives_selected_customer(self):
-        with patch("server.app._appointment_topics", return_value=TOPICS) as analyze:
+        with patch("server.app._appointment_report", return_value={"items": TOPICS}) as analyze:
             app.test_client().post("/api/rdv/workflow?customer=marc").get_data()
         self.assertEqual(analyze.call_args.args[0], "marc")
 
     def test_unknown_customer_cannot_select_csv(self):
         with self.assertRaisesRegex(ValueError, "Client inconnu"):
-            _appointment_topics("missing")
+            _appointment_report("missing")
 
 
 if __name__ == "__main__":

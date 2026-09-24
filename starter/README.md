@@ -61,11 +61,13 @@ Annie (`annie`, the default) and Marc (`marc`). Use the visible switcher on `/`,
 or open `/?customer=marc` and `/rdv?customer=marc` directly. Unknown customer IDs
 return 404. Both pages and the RDV workflow use the same selected customer.
 
-Annie's missing-contact scenario uses `data/demo_account_operations.csv`; Marc's
-possible property-purchase scenario uses `data/marc_account_operations.csv`.
+Annie's missing-contact scenario uses `inputs/client-002.csv`, the same file as
+`tiny_ex.py`; Marc's possible property-purchase scenario uses
+`data/marc_account_operations.csv`.
 The page at `/rdv` automatically calls `CsvAnalysisAgent.run` through
-`POST /api/rdv/workflow?customer=<id>` and displays up to three structured report
-items as subjects to explore. Each card shows the insight and its data signal.
+`POST /api/rdv/workflow?customer=<id>` with the same objective as `tiny_ex.py`
+and displays its full structured report. Each card shows an insight and its data
+signal.
 The profile-based brief remains visible if analysis fails. Agent artifacts are
 saved under `starter/output/rdv/<id>/` in unique per-run subdirectories.
 When the agent returns no complete topic, the page displays an empty-state

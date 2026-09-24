@@ -4,7 +4,8 @@ import json
 from datetime import date
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+STARTER_DIR = Path(__file__).resolve().parents[1]
+DATA_DIR = STARTER_DIR / "data"
 DEFAULT_CUSTOMER_ID = "annie"
 
 
@@ -15,7 +16,7 @@ CUSTOMERS = {
 
 
 def customer_csv(customer):
-    return DATA_DIR / customer["csv"]
+    return STARTER_DIR / customer["csv"]
 
 
 def _date(value):

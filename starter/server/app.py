@@ -10,7 +10,6 @@ import uuid
 from pathlib import Path
 
 from flask import Flask, Response, abort, render_template, request
-from pydantic import ValidationError
 
 if __package__:
     from .profiles import (
@@ -31,19 +30,6 @@ app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.logger.setLevel(logging.INFO)
 STARTER_DIR = Path(__file__).resolve().parents[1]
 WORKFLOW_HEARTBEAT_SECONDS = 4
-RDV_OBJECTIVE = (
-    "Analyse les données bancaires du CSV pour préparer un rendez-vous client. "
-    "Propose jusqu'à trois sujets distincts et prioritaires à explorer, uniquement "
-    "lorsqu'un signal précis existe. Exploite les catégories et libellés des opérations. "
-    "Un projet immobilier ne peut être évoqué que si des opérations explicites "
-    "(par exemple frais de projet immobilier ou virements à un notaire) l'étayent ; "
-    "le total de tous les crédits ne suffit pas à l'établir. "
-    "Pour une éventuelle multi-bancarité, cherche des virements externes répétés "
-    "vers le même bénéficiaire et calcule leur nombre et montant ; présente-la "
-    "comme une question à vérifier, jamais comme un fait certain. "
-    "Pour chacun, donne un enseignement et le signal chiffré "
-    "qui le justifie. Ne déduis rien qui ne soit pas étayé par les données."
-)
 
 
 @app.route("/")
@@ -75,47 +61,34 @@ def _selected_customer():
     return customer
 
 
-def _appointment_topics(customer_id=DEFAULT_CUSTOMER_ID, on_step=None):
-    """Run the LangGraph CSV agent and return up to three complete report items."""
+def _appointment_report(customer_id=DEFAULT_CUSTOMER_ID, on_step=None):
+    """Run the same CSV analysis as tiny_ex.py for the selected customer."""
     if str(STARTER_DIR) not in sys.path:
         sys.path.insert(0, str(STARTER_DIR))
+    from config import settings
     from csv_agent import CsvAnalysisAgent
-    from csv_tools import SummaryItem
 
     customer = CUSTOMERS.get(customer_id)
     if customer is None:
         raise ValueError("Client inconnu.")
     csv_path = customer_csv(customer)
 
-    agent_rdv = CsvAnalysisAgent()
-    report = agent_rdv.run(
+    report = CsvAnalysisAgent().run(
         csv_path,
-        RDV_OBJECTIVE,
+        settings.agent.objective,
         STARTER_DIR / "output" / "rdv" / customer_id,
         on_step=on_step,
     )["report"]
-    items = report.get("items") or []
-    topics = []
-    for item in items:
-        try:
-            topic = SummaryItem.model_validate(item)
-        except ValidationError:
-            continue
-        topics.append(topic.model_dump())
-        if len(topics) == 3:
-            break
     app.logger.info(
-        "LangGraph agent returned to RDV API (raw_item_count=%d, "
-        "complete_topic_count=%d)",
-        len(items),
-        len(topics),
+        "LangGraph agent returned to RDV API (item_count=%d)",
+        len(report["items"]),
     )
-    return topics
+    return report
 
 
 @app.post("/api/rdv/workflow")
 def rdv_workflow():
-    """Stream progress and available CSV-backed appointment topics."""
+    """Stream progress and the CSV agent's appointment report."""
     customer = _selected_customer()
     customer_id = customer["id"]
     request_id = uuid.uuid4().hex
@@ -131,10 +104,10 @@ def rdv_workflow():
 
             def analyze():
                 try:
-                    topics = _appointment_topics(
+                    report = _appointment_report(
                         customer_id, on_step=lambda node: updates.put(("node", node))
                     )
-                    updates.put(("result", topics))
+                    updates.put(("result", report))
                 except Exception as exc:
                     updates.put(("error", exc))
 
@@ -224,8 +197,8 @@ def rdv_workflow():
                 if active_step == "context":
                     yield event({"step": "context", "status": "complete"})
                     yield event({"step": "brief", "status": "running"})
-                result = {"step": "brief", "status": "complete", "topics": value}
-                if not value:
+                result = {"step": "brief", "status": "complete", "report": value}
+                if not value["items"]:
                     result["warning"] = (
                         "Aucun sujet étayé n'a été trouvé dans les opérations."
                     )
@@ -233,7 +206,7 @@ def rdv_workflow():
                         "RDV workflow produced no supported topics "
                         "(request_id=%s, topic_count=%d)",
                         request_id,
-                        len(value),
+                        len(value["items"]),
                     )
                 yield event(result)
                 break
@@ -241,7 +214,7 @@ def rdv_workflow():
                 "RDV workflow completed (request_id=%s, topic_count=%d, "
                 "duration_seconds=%.2f)",
                 request_id,
-                len(value),
+                len(value["items"]),
                 time.monotonic() - started_at,
             )
             yield event({"status": "done"})
