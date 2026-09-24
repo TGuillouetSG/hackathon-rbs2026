@@ -10,14 +10,14 @@
 
 <body>
   <header class="appbar">
-    <a class="brand" href="/"><span class="brand-symbol"></span>SYNAPSE</a>
-    <nav class="topnav" aria-label="Navigation principale"><a href="/">Accueil</a><a href="#">Activité</a><a href="#">Pilotage</a><a href="#">Suivi</a></nav>
+    <a class="brand" href="{{ url_for('index', customer=customer.id) }}"><span class="brand-symbol"></span>SYNAPSE</a>
+    <nav class="topnav" aria-label="Navigation principale"><a href="{{ url_for('index', customer=customer.id) }}">Accueil</a><a href="#">Activité</a><a href="#">Pilotage</a><a href="#">Suivi</a></nav>
     <label class="search"><span>⌕</span><input type="search" placeholder="Rechercher un tiers, un contrat, une demande de service..."></label>
     <div class="top-actions"><span title="Aide">ⓘ</span><span class="avatar-top" title="Profil"></span></div>
   </header>
   <div class="layout">
     <aside class="rail" aria-label="Navigation client">
-      <a class="rail-item" href="/"><span class="ico">♙</span><span>Synthèse</span></a>
+      <a class="rail-item" href="{{ url_for('index', customer=customer.id) }}"><span class="ico">♙</span><span>Synthèse</span></a>
       <a class="rail-item" href="#"><span class="ico">▤</span><span>Contrats<br>&amp; Serv.</span></a>
       <a class="rail-item" href="#"><span class="ico">▣</span><span>Banque<br>au quot.</span></a>
       <a class="rail-item" href="#"><span class="ico">♧</span><span>Crédits</span></a>
@@ -28,56 +28,94 @@
       <div class="titlebar"><h1>Préparation du rendez-vous</h1></div>
       <main class="content rdv-content">
         <div class="rdv-dashboard">
-          <a class="back-link" href="/">← Retour à la synthèse</a>
-          <section class="client-banner rdv-client">
-            <div class="client-icon">♙</div>
-            <div class="identity">
-              <div class="client-name"><strong>Mme Annie BERTOUD</strong><small> — ID GRC : BAB7595 · Conseiller : Nicolas ZAOUI</small></div>
-              <div class="badges"><span class="badge b-blue">Client</span><span class="badge b-purple">Banque Privée</span></div>
-            </div>
-          </section>
+          {% set banner_class = 'rdv-client' %}
+          {% set show_back_action = true %}
+          {% include '_client_banner.html' %}
 
-          <section class="panel workflow-panel" aria-labelledby="workflow-title">
-            <header class="workflow-heading">
-              <div><span class="eyebrow">SYNAPSE · ASSISTANT CONSEILLER</span><h2 id="workflow-title">Préparation du prochain RDV</h2>
-                <p>Nous réunissons les informations utiles pour préparer votre échange avec la cliente.</p></div>
-              <span class="workflow-mark" aria-hidden="true">✦</span>
+          <section class="panel workflow-panel is-preparing" id="workflow-panel" aria-labelledby="workflow-title" aria-busy="true">
+            <header class="panel-title workflow-heading">
+              <span class="title-icon workflow-mark" id="workflow-mark" aria-hidden="true">✦</span>
+              <h2 id="workflow-title">Préparation du prochain RDV</h2>
+              <span class="brief-ready" id="workflow-ready" hidden>Prêt à consulter</span>
             </header>
             <div class="workflow-body">
+              <p class="workflow-progress-label">Préparation en cours <span aria-hidden="true">·</span> 3 étapes</p>
               <ol class="workflow-steps" id="workflow-steps" aria-label="Étapes de préparation" aria-live="polite">
                 <li class="workflow-step is-pending" data-step="client"><span class="step-icon"><span class="step-spinner"></span></span><span class="step-copy"><strong>Récupération des informations client</strong><small>Profil et données disponibles</small></span></li>
                 <li class="workflow-step is-pending" data-step="context"><span class="step-icon"><span class="step-spinner"></span></span><span class="step-copy"><strong>Analyse du contexte et des points d’attention</strong><small>Alertes et sujets à vérifier</small></span></li>
                 <li class="workflow-step is-pending" data-step="brief"><span class="step-icon"><span class="step-spinner"></span></span><span class="step-copy"><strong>Préparation de la synthèse du rendez-vous</strong><small>Priorités et questions suggérées</small></span></li>
               </ol>
               <div class="workflow-status" id="workflow-status" role="status">Démarrage de la préparation…</div>
-              <section class="workflow-result" id="workflow-result" hidden aria-labelledby="result-title">
-                <div class="brief-header"><div><span class="eyebrow">FICHE DE PRÉPARATION</span><h3 id="result-title">Votre prochain rendez-vous</h3><p>Mme Annie BERTOUD · Banque Privée · Conseiller Nicolas ZAOUI</p></div><span class="brief-ready">Prêt à consulter</span></div>
+              <section class="workflow-result" id="workflow-result" aria-labelledby="workflow-title" hidden>
                 <div class="brief-grid">
-                  <section class="brief-card brief-actions" aria-labelledby="actions-title"><h4 id="actions-title"><span aria-hidden="true">✦</span> Actions suggérées avant le RDV</h4><ul><li>Confirmer le motif et la date du rendez-vous avec la cliente.</li><li>Demander la mise à jour de l’adresse, du téléphone et de l’e-mail.</li><li>Vérifier le risque de pli non distribué et compléter la profession.</li></ul></section>
-                  <section class="brief-card" aria-labelledby="essentiel-title"><h4 id="essentiel-title"><span aria-hidden="true">◉</span> L’essentiel en 30 secondes</h4><dl class="facts"><div><dt>Relation client</dt><dd>Depuis le 01/11/1994</dd></div><div><dt>Épargne et titres</dt><dd>6 313,90 € <small>montant affiché, à vérifier</small></dd></div><div><dt>Dernier RDV</dt><dd>Aucun rendez-vous affiché</dd></div><div><dt>Agence</dt><dd>Test Rabelais (0451)</dd></div></dl></section>
-                  <section class="brief-card" aria-labelledby="attention-title"><h4 id="attention-title"><span aria-hidden="true">◈</span> Points d’attention</h4><ul class="attention-list"><li><strong>Coordonnées</strong><span>Adresse à mettre à jour ; téléphone et e-mail à renseigner.</span></li><li><strong>Courrier</strong><span>Risque de pli non distribué signalé.</span></li><li><strong>Relation</strong><span>Aucun compte-rendu ni rendez-vous affiché.</span></li></ul></section>
-                  <section class="brief-card topics-card" aria-labelledby="topics-title"><h4 id="topics-title"><span aria-hidden="true">◎</span> 3 sujets à explorer</h4><div class="topic"><div><span class="topic-dot"></span><strong>Fiabiliser les coordonnées</strong></div><p>Comment joindre la cliente et sécuriser la réception des courriers ?</p><details><summary>Approfondir</summary><p>Confirmer l’adresse postale, le téléphone et l’e-mail avec la cliente, puis vérifier le signalement de pli non distribué.</p></details></div><div class="topic"><div><span class="topic-dot amber"></span><strong>Actualiser la situation</strong></div><p>La profession n’est pas renseignée dans le dossier.</p><details><summary>Approfondir</summary><p>Demander si sa situation professionnelle a changé et mettre le dossier à jour avec son accord.</p></details></div><div class="topic"><div><span class="topic-dot green"></span><strong>Comprendre les besoins</strong></div><p>Clarifier le motif du rendez-vous et les projets à venir.</p><details><summary>Approfondir</summary><p>Faire préciser les objectifs, l’horizon et les attentes de la cliente avant d’évoquer les solutions.</p></details></div></section>
+                  <section class="brief-card brief-actions" aria-labelledby="actions-title"><h4 id="actions-title"><span aria-hidden="true">✦</span> Actions suggérées avant le RDV</h4><ul><li>Confirmer le motif et la date du rendez-vous.</li>{% for action in view.actions %}<li>{{ action }}</li>{% endfor %}</ul></section>
+                  <section class="brief-card" aria-labelledby="essentiel-title"><h4 id="essentiel-title"><span aria-hidden="true">◉</span> L’essentiel en 30 secondes</h4><dl class="facts"><div><dt>Relation client</dt><dd>Depuis le {{ view.relationship_date }}</dd></div><div><dt>Épargne et titres</dt><dd>{{ view.savings }} <small>montant affiché, à vérifier</small></dd></div><div><dt>Dernier RDV</dt><dd>{{ view.last_appointment or 'Aucun rendez-vous affiché' }}</dd></div><div><dt>Agence</dt><dd>{{ customer.branch }}</dd></div></dl></section>
+                  <section class="brief-card" aria-labelledby="attention-title"><h4 id="attention-title"><span aria-hidden="true">◈</span> Points d’attention</h4><ul class="attention-list">{% for label, detail in view.alerts %}<li><strong>{{ label }}</strong><span>{{ detail }}</span></li>{% else %}<li><span>Aucun point d’attention signalé.</span></li>{% endfor %}</ul></section>
+                  <section class="brief-card topics-card" aria-labelledby="topics-title"><h4 id="topics-title"><span aria-hidden="true">◎</span> Sujets à explorer</h4><div class="workflow-warning" id="topics-warning" role="status" hidden></div><div class="workflow-error" id="workflow-error" role="alert" hidden></div><div id="topics-list">Analyse en cours…</div></section>
                 </div>
-                <div class="brief-footer"><button type="button" class="agenda-button" id="agenda-button" aria-expanded="false" aria-controls="agenda-panel">✦ Générer ma trame de RDV</button><p>Les éléments ci-dessus proviennent de la synthèse client affichée dans cette démonstration.</p></div>
-                <section class="agenda-panel" id="agenda-panel" hidden aria-labelledby="agenda-title"><h4 id="agenda-title">Trame de rendez-vous proposée</h4><ol><li>Accueil et confirmation du motif du rendez-vous.</li><li>Vérification des coordonnées et de la réception des courriers.</li><li>Mise à jour de la situation professionnelle.</li><li>Échange sur les besoins et prochaines étapes.</li></ol><h5>Synthèse de l’assistant</h5><p id="result-text"></p></section>
+                <div class="brief-footer"><button type="button" class="agenda-button" id="agenda-button" aria-expanded="false" aria-controls="agenda-panel">✦ Générer ma trame de RDV</button><p id="topics-source">Les sujets du client sélectionné sont en cours d’analyse.</p></div>
+                <section class="agenda-panel" id="agenda-panel" hidden aria-labelledby="agenda-title"><h4 id="agenda-title">Trame de rendez-vous proposée</h4><ol id="agenda-list"></ol></section>
               </section>
-              <div class="workflow-error" id="workflow-error" role="alert" hidden></div>
             </div>
           </section>
         </div>
       </main>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
   <script>
     (() => {
       const steps = document.querySelectorAll('.workflow-step');
+      const panel = document.getElementById('workflow-panel');
+      const stepper = document.getElementById('workflow-steps');
       const status = document.getElementById('workflow-status');
       const result = document.getElementById('workflow-result');
-      const resultText = document.getElementById('result-text');
+      const title = document.getElementById('workflow-title');
+      const mark = document.getElementById('workflow-mark');
+      const ready = document.getElementById('workflow-ready');
+      const topicsList = document.getElementById('topics-list');
+      const topicsWarning = document.getElementById('topics-warning');
+      const topicsSource = document.getElementById('topics-source');
+      const agendaList = document.getElementById('agenda-list');
       const error = document.getElementById('workflow-error');
       const agendaButton = document.getElementById('agenda-button');
       const agendaPanel = document.getElementById('agenda-panel');
       let buffer = '';
+      let finished = false;
+
+      function revealBrief(complete) {
+        if (finished) return;
+        title.textContent = 'Votre prochain rendez-vous';
+        mark.hidden = true;
+        ready.textContent = complete ? 'Prêt à consulter' : 'Préparation partielle';
+        ready.hidden = false;
+        stepper.hidden = true;
+        status.hidden = true;
+        panel.classList.remove('is-preparing');
+        panel.setAttribute('aria-busy', 'false');
+        result.hidden = false;
+        finished = true;
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !window.gsap) return;
+        const cards = result.querySelectorAll('.brief-card');
+        const timeline = gsap.timeline();
+        timeline.fromTo(ready, { autoAlpha: 0, scale: 0.92 }, { autoAlpha: 1, scale: 1, duration: 0.32, ease: 'back.out(1.4)' });
+        timeline.fromTo(cards, { autoAlpha: 0, y: 16, scale: 0.985 }, {
+          autoAlpha: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.11,
+          ease: 'back.out(1.25)', clearProps: 'opacity,visibility,transform'
+        }, '-=0.12');
+        timeline.fromTo(result.querySelector('.brief-footer'), { autoAlpha: 0, y: 10 }, {
+          autoAlpha: 1, y: 0, duration: 0.35, ease: 'power2.out', clearProps: 'opacity,visibility,transform'
+        }, '-=0.18');
+      }
+
+      function showStatus(message) {
+        if (status.textContent === message) return;
+        const line = document.createElement('span');
+        line.className = 'workflow-status-line';
+        line.textContent = message;
+        status.replaceChildren(line);
+      }
 
       agendaButton.addEventListener('click', () => {
         agendaPanel.hidden = !agendaPanel.hidden;
@@ -101,12 +139,50 @@
       }
 
       function showError(message) {
+        if (finished) return;
         steps.forEach(item => {
           if (item.classList.contains('is-running')) updateStep(item.dataset.step, 'error');
         });
-        status.textContent = 'La préparation a rencontré un problème.';
+        showStatus('La préparation a rencontré un problème.');
+        topicsList.textContent = '';
+        topicsSource.textContent = 'Les sujets issus des opérations ne sont pas disponibles.';
         error.textContent = message || 'Une erreur est survenue.';
         error.hidden = false;
+        revealBrief(false);
+      }
+
+      function showTopics(topics) {
+        topicsList.replaceChildren();
+        agendaList.replaceChildren();
+        const intro = document.createElement('li');
+        intro.textContent = 'Accueil et confirmation du motif du rendez-vous.';
+        agendaList.append(intro);
+        if (topics.length === 0) {
+          const empty = document.createElement('p');
+          empty.textContent = 'Aucun sujet complet issu du CSV n’est disponible pour ce rendez-vous.';
+          topicsList.append(empty);
+        }
+        topics.forEach((item, index) => {
+          const topic = document.createElement('div');
+          topic.className = 'topic';
+          const heading = document.createElement('div');
+          const dot = document.createElement('span');
+          dot.className = `topic-dot ${['', 'amber', 'green'][index]}`.trim();
+          const title = document.createElement('strong');
+          title.textContent = item.Insight;
+          heading.append(dot, title);
+          const details = document.createElement('details');
+          const summary = document.createElement('summary');
+          summary.textContent = 'Signal dans les données';
+          const signal = document.createElement('p');
+          signal.textContent = item.Signal_in_the_data;
+          details.append(summary, signal);
+          topic.append(heading, details);
+          topicsList.append(topic);
+          const agendaItem = document.createElement('li');
+          agendaItem.textContent = item.Insight;
+          agendaList.append(agendaItem);
+        });
       }
 
       function handleEvent(event) {
@@ -114,17 +190,21 @@
         let data;
         try { data = JSON.parse(event.data); } catch { return; }
         if (data.step && data.status) updateStep(data.step, data.status);
+        if (data.step === 'brief' && data.status === 'complete') status.hidden = true;
         if (data.status === 'running') {
           const current = document.querySelector(`[data-step="${data.step}"] strong`);
-          status.textContent = current ? current.textContent + '…' : 'Préparation en cours…';
+          showStatus(data.message || (current ? current.textContent + '…' : 'Préparation en cours…'));
         }
-        if (data.step === 'brief' && data.status === 'complete' && data.result) {
-          resultText.textContent = data.result;
-          result.hidden = false;
-          document.getElementById('workflow-steps').hidden = true;
-          status.hidden = true;
+        if (data.step === 'brief' && data.status === 'complete' && Array.isArray(data.topics)) {
+          showTopics(data.topics);
+          topicsWarning.textContent = data.warning || '';
+          topicsWarning.hidden = !data.warning;
+          topicsSource.textContent = data.topics.length
+            ? 'Les sujets affichés proviennent de l’analyse des opérations du client sélectionné.'
+            : 'Aucun sujet issu de l’analyse CSV n’est affiché.';
+          revealBrief(true);
         }
-        if (data.status === 'done' && result.hidden) status.textContent = 'Préparation terminée';
+        if (data.status === 'done') status.hidden = true;
         if (data.status === 'error') {
           showError(data.message);
         }
@@ -132,7 +212,7 @@
 
       async function startWorkflow() {
         try {
-          const response = await fetch('/api/rdv/workflow', { method: 'POST', headers: { 'Accept': 'text/event-stream' } });
+          const response = await fetch({{ url_for('rdv_workflow', customer=customer.id) | tojson }}, { method: 'POST', headers: { 'Accept': 'text/event-stream' } });
           if (!response.ok || !response.body) throw new Error('Impossible de démarrer la préparation. Réessayez.');
           const reader = response.body.getReader();
           const decoder = new TextDecoder();

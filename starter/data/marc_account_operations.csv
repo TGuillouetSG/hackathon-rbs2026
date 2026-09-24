@@ -1,0 +1,13 @@
+date,libelle,categorie,montant_eur,solde_apres_operation_eur
+2026-06-01,Salaire,Revenu,4200.00,12400.00
+2026-06-05,Loyer,Logement,-1250.00,11150.00
+2026-06-12,Épargne mensuelle,Epargne,-500.00,10650.00
+2026-07-01,Salaire,Revenu,4200.00,14850.00
+2026-07-05,Loyer,Logement,-1250.00,13600.00
+2026-07-15,Virement vente véhicule,Entrée exceptionnelle,12500.00,26100.00
+2026-08-01,Salaire,Revenu,4200.00,30300.00
+2026-08-05,Loyer,Logement,-1250.00,29050.00
+2026-08-11,Virement notaire étude démo,Frais projet immobilier,-3500.00,25550.00
+2026-08-19,Simulation prêt immobilier,Frais projet immobilier,-95.00,25455.00
+2026-09-01,Salaire,Revenu,4200.00,29655.00
+2026-09-04,Virement notaire étude démo,Frais projet immobilier,-1800.00,27855.00

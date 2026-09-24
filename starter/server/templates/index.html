@@ -27,31 +27,20 @@
       <a class="rail-item" href="#assurance"><span class="ico">♧</span><span>Assu &amp;<br>Prévoy.</span></a>
     </aside>
     <div class="workspace">
-      <div class="titlebar">
+      <div class="titlebar with-switcher">
         <h1>Synthèse</h1>
+        <form class="customer-switcher" action="{{ url_for('index') }}" method="get">
+          <label for="customer-select">Client</label>
+          <select id="customer-select" name="customer" onchange="this.form.submit()">
+            {% for option in customers %}<option value="{{ option.id }}"{% if option.id == customer.id %} selected{% endif %}>{{ option.name }}</option>{% endfor %}
+          </select>
+          <button type="submit">Afficher</button>
+        </form>
       </div>
       <main class="content" id="synthese">
         <div class="dashboard">
-          <section class="client-banner">
-            <div class="client-icon">♙</div>
-            <div class="identity">
-              <div class="client-name"><strong>Mme Annie BERTOUD</strong><small> - Née BERTOUD le 21/04/1977 à Sazeau
-                    (56240), France, 49 ans, célibataire&nbsp; <a href="#">Voir plus</a></small></div>
-              <div class="badges">
-                <span class="badge b-blue">Client</span>
-                <span class="badge b-purple">Banque Privée</span>
-                <span class="badge b-navy">NON CLASSE OU EN ATTENTE DE CLASSEMENT</span>
-                <span class="badge b-muted">Non classé ou en attente de classement</span>
-                <span class="badge b-gray">▣ Conformité - Non évaluée</span>
-                <span class="badge b-amber">⚠ Risques</span>
-                <span class="badge b-amber">⚠ Inactivité Eckert</span>
-              </div>
-            </div>
-            <div class="client-actions">
-              <span class="grc">ID GRC : BAB7595&nbsp; ▣</span>
-              <a class="rdv-link" href="/rdv">Préparer prochain RDV <span aria-hidden="true">→</span></a>
-            </div>
-          </section>
+          {% set show_rdv_action = true %}
+          {% include '_client_banner.html' %}
           <div class="grid">
             <div class="col col-left">
               <section class="panel">
@@ -61,26 +50,28 @@
                 <div class="panel-body data-body">
                   <div class="data-section">
                     <div class="section-heading">Coordonnées <a href="#">Voir plus</a></div>
-                    <div class="info-line"><span class="highlight">⚠ Adresse(s) à mettre à jour</span></div>
-                    <div class="info-line">Téléphone : À renseigner <span class="status-icon">⚠</span></div>
-                    <div class="info-line">E-mail : À renseigner <span class="status-icon">⚠</span></div>
-                    <div class="info-line">Adresse : -, 91250 Tigery</div>
-                    <div class="info-line"><span class="highlight risk">Risque Pli non distribué</span></div>
+                    {% if customer.address_needs_update %}<div class="info-line"><span class="highlight">⚠ Adresse à mettre à jour</span></div>{% endif %}
+                    <div class="info-line">Téléphone : {{ customer.phone or 'À renseigner' }}{% if not customer.phone %} <span class="status-icon">⚠</span>{% endif %}</div>
+                    <div class="info-line">E-mail : {{ customer.email or 'À renseigner' }}{% if not customer.email %} <span class="status-icon">⚠</span>{% endif %}</div>
+                    <div class="info-line">Adresse : {{ customer.address or 'À renseigner' }}</div>
+                    {% if customer.undelivered_mail_risk %}<div class="info-line"><span class="highlight risk">Risque de pli non distribué</span></div>{% endif %}
                   </div>
                   <div class="data-section">
                     <div class="section-heading">Situation professionnelle et fiscale <a href="#">Voir plus</a></div>
-                    <div class="info-line">Profession : -</div>
-                    <div class="info-line">Pays de résidence fiscale : France</div>
+                    <div class="info-line">Profession : {{ customer.profession or 'À renseigner' }}</div>
+                    <div class="info-line">Pays de résidence fiscale : {{ customer.tax_country or 'Non renseigné' }}</div>
                   </div>
                   <div class="data-section">
                     <div class="section-heading">Environnement bancaire <a href="#">Voir plus</a></div>
-                    <div class="info-line">Agence : Test Rabelais (0451)</div>
-                    <div class="info-line">Suivi Principal : Nicolas ZAOUI (CH CLI PRI)</div>
-                    <div class="info-line">Entrée en relation le : 01/11/1994 (31 ans)</div>
+                    <div class="info-line">Agence : {{ customer.branch }}</div>
+                    <div class="info-line">Suivi principal : {{ customer.adviser }}</div>
+                    <div class="info-line">Entrée en relation le : {{ view.relationship_date }}{% if view.relationship_years is not none %} ({{ view.relationship_years }} ans){% endif %}</div>
                     <a class="link-line" href="#">Accéder à la Connaissance client</a>
+                    {% if customer.segment == 'Banque Privée' %}
                     <a class="link-line" href="#">Accéder aux détails du client Banque Privée　➜</a>
                     <a class="link-line" href="#">Consulter/Modifier les données Banque Privée　➜</a>
                     <a class="link-line" href="#">Accéder au service de Gestion de Fortune　➜</a>
+                    {% endif %}
                   </div>
                 </div>
               </section>
@@ -88,20 +79,18 @@
                 <div class="panel-body">
                   <div class="digital-title"><span class="title-icon">☞</span>Digital Client</div>
                   <div class="digital-body">
-                    <div class="digital-row"><span class="status-icon red">ⓧ</span><span>Pas de contrat BAD</span></div>
+                    <div class="digital-row"><span class="status-icon {% if customer.bad_contract %}blue{% else %}red{% endif %}">{% if customer.bad_contract %}✓{% else %}ⓧ{% endif %}</span><span>{% if customer.bad_contract %}Contrat BAD actif{% else %}Pas de contrat BAD{% endif %}</span></div>
                     <div class="digital-row"><span style="width:14px"></span><span>Identifiant BAD :
-                        <b>16266313</b></span></div>
-                    <div class="digital-row"><span class="status-icon">⚠</span><span>Téléphone sécurité à
-                        renseigner</span></div>
-                    <div class="digital-row"><span class="status-icon">⚠</span><span>Pass sécurité à valider</span>
+                        <b>{{ customer.bad_id or 'Non renseigné' }}</b></span></div>
+                    <div class="digital-row"><span class="status-icon">{% if customer.security_phone_set %}✓{% else %}⚠{% endif %}</span><span>Téléphone sécurité {% if customer.security_phone_set %}renseigné{% else %}à renseigner{% endif %}</span></div>
+                    <div class="digital-row"><span class="status-icon">{% if customer.security_pass_validated %}✓{% else %}⚠{% endif %}</span><span>Pass sécurité {% if customer.security_pass_validated %}validé{% else %}à valider{% endif %}</span>
                     </div>
                     <a href="#">Gérer le téléphone et le pass sécurité　➜</a>
                     <div class="digital-sub">Critères d'authentification　<a href="#">Voir plus</a></div>
-                    <div class="digital-row"><span class="status-icon">⚠</span><span>Critère 1 à renseigner</span></div>
-                    <div class="digital-row"><span class="status-icon">⚠</span><span>Critère 2 à renseigner</span></div>
-                    <div class="digital-row"><span class="status-icon">⚠</span><span>RGPD : consentements RGPD à
-                        collecter</span></div>
-                    <div class="digital-row"><span class="status-icon blue">ⓘ</span><span>Démat' non concerné</span>
+                    <div class="digital-row"><span class="status-icon">{% if customer.auth_criteria_set >= 1 %}✓{% else %}⚠{% endif %}</span><span>Critère 1 {% if customer.auth_criteria_set >= 1 %}renseigné{% else %}à renseigner{% endif %}</span></div>
+                    <div class="digital-row"><span class="status-icon">{% if customer.auth_criteria_set >= 2 %}✓{% else %}⚠{% endif %}</span><span>Critère 2 {% if customer.auth_criteria_set >= 2 %}renseigné{% else %}à renseigner{% endif %}</span></div>
+                    <div class="digital-row"><span class="status-icon">{% if customer.rgpd_collected %}✓{% else %}⚠{% endif %}</span><span>RGPD : consentements {% if customer.rgpd_collected %}recueillis{% else %}à collecter{% endif %}</span></div>
+                    <div class="digital-row"><span class="status-icon blue">ⓘ</span><span>Démat' {% if customer.demat_applicable %}activée{% else %}non concerné{% endif %}</span>
                     </div>
                   </div>
                 </div>
@@ -112,18 +101,14 @@
                 <header class="panel-title"><span class="title-icon">♧</span>
                   <h2>Contrats &amp; Services</h2>
                 </header>
-                <div class="warning"><span class="warning-icon">⚠</span><span>La restitution des contrats et services de
-                    Epargne et Titres n'a pas pu aboutir.<br>Veuillez réessayer ultérieurement.</span></div>
                 <div class="accordion" id="banque">Banque au quotidien <span class="chevron">⌃</span></div>
                 <div class="empty-contract">
-                  <div class="empty-box"></div><span>Aucun contrat ni service souscrit par le(s) tiers
-                    sélectionné(s)</span>
+                  <div class="empty-box"></div><span>{% if customer.daily_banking_contracts %}{{ customer.daily_banking_contracts }} contrat bancaire affiché{% else %}Aucun contrat bancaire affiché{% endif %}</span>
                 </div>
                 <div class="service-row" id="credits">Crédits <span class="service-actions"><span
                       class="round-icon">⌂</span><span class="round-icon">▣</span><span class="round-icon">⟳</span><span
                       style="margin-left:8px">⌄</span></span></div>
-                <div class="service-row" id="epargne">Epargne et Titres (1) <span class="service-value">6 313,90
-                    EUR</span><span class="service-actions"><span class="round-icon green">◉</span><span
+                <div class="service-row" id="epargne">Epargne et Titres ({{ customer.savings_contracts }}) <span class="service-value">{{ view.savings }}</span><span class="service-actions"><span class="round-icon green">◉</span><span
                       class="round-icon">♧</span><span class="round-icon">▤</span><span
                       style="margin-left:8px">⌄</span></span></div>
                 <div class="service-row" id="assurance">Assurances et Prévoyance <span class="service-actions"><span
@@ -135,8 +120,8 @@
                   <h2>Pouvoirs</h2>
                 </header>
                 <div class="simple-body">
-                  <p>Procurations : <b>0</b></p>
-                  <p>Représentations : <b>0</b></p><a href="#">Gérer les pouvoirs</a>
+                  <p>Procurations : <b>{{ customer.powers.procurations }}</b></p>
+                  <p>Représentations : <b>{{ customer.powers.representations }}</b></p><a href="#">Gérer les pouvoirs</a>
                 </div>
               </section>
               <section class="panel">
@@ -144,10 +129,10 @@
                   <h2>Interactions</h2>
                 </header>
                 <div class="panel-body" style="padding:0 11px">
-                  <div class="interaction-row"><span class="rowico">▦</span>Aucun rendez-vous</div>
-                  <div class="interaction-row"><span class="rowico">♧</span>Aucun appel sur les 3 derniers mois <a
+                  <div class="interaction-row"><span class="rowico">▦</span>{% if view.last_appointment %}Dernier rendez-vous : {{ view.last_appointment }}{% else %}Aucun rendez-vous affiché{% endif %}</div>
+                  <div class="interaction-row"><span class="rowico">♧</span>{% if customer.recent_calls %}{{ customer.recent_calls }} appel{% if customer.recent_calls > 1 %}s{% endif %}{% else %}Aucun appel{% endif %} sur les 3 derniers mois <a
                       href="#">Voir plus</a></div>
-                  <div class="interaction-row"><span class="rowico">▤</span>Aucun compte-rendu <a href="#">Voir plus</a>
+                  <div class="interaction-row"><span class="rowico">▤</span>{% if customer.reports %}{{ customer.reports }} compte-rendu{% if customer.reports > 1 %}s{% endif %}{% else %}Aucun compte-rendu{% endif %} <a href="#">Voir plus</a>
                   </div>
                 </div>
               </section>

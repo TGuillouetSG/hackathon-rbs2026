@@ -9,29 +9,38 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import uuid
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, TypeVar
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from client import FoundryClient
 from config import settings
-from utils import import_csv
+from utils import import_csv, read_csv_rows
 
 logger = logging.getLogger(__name__)
 
 MAX_OUTPUT_CHARS = 8000
 EXECUTION_TIMEOUT_SECONDS = 60
+FOUNDRY_REQUEST_TIMEOUT_SECONDS = 90
+
 class SummaryItem(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
 
-    # Question: str
     Insight: str
     Signal_in_the_data: str
     details: str
+
+    @field_validator("Insight", "Signal_in_the_data")
+    @classmethod
+    def require_text(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Summary fields must not be blank")
+        return value.strip()
 
 
 class SummaryOutput(BaseModel):
@@ -116,10 +125,23 @@ class CsvTools:
     """Tools bound to one run so a code ID can only resolve within that run."""
 
     def __init__(self, foundry: FoundryClient, run_dir: Path, csv_path: Path):
-        self.model = foundry.deployment_name
+        self.code_model = getattr(foundry, "code_deployment_name", None) or foundry.deployment_name
+        self.summary_model = foundry.deployment_name
         self.client = foundry.client
         self.run_dir = Path(run_dir).resolve()
-        self.csv_path = import_csv(csv_path)
+        source = import_csv(csv_path)
+        self.run_dir.mkdir(parents=True, exist_ok=True)
+        # Generated programs consume a predictable UTF-8, comma-separated file.
+        # Bank exports commonly arrive as cp1252 with a semicolon delimiter.
+        normalized_path = self.run_dir / "input_normalized.csv"
+        rows = read_csv_rows(source)
+        with normalized_path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(rows[0]) if rows else [],
+                                    lineterminator="\n")
+            if rows:
+                writer.writeheader()
+                writer.writerows(rows)
+        self.csv_path = normalized_path
         self.program_dir = self.run_dir / "programs"
         self.program_dir.mkdir(parents=True, exist_ok=True)
 
@@ -155,11 +177,15 @@ class CsvTools:
         logger.info("CSV profile complete: %d rows, %d columns", count, len(names))
         return profile
 
-    def write_python_code(self, prompt: str) -> dict[str, str]:
+    def write_python_code(self, prompt: str) -> dict[str, Any]:
         """Generate Python with a dedicated Foundry call and save it by code ID."""
+        started = time.perf_counter()
         logger.info("Requesting CSV analysis code from Foundry")
         response = self.client.responses.create(
-            model=self.model, store=False, instructions=settings.prompts.code_instructions, input=prompt
+            model=self.code_model, store=False, instructions=settings.prompts.code_instructions,
+            input=prompt, timeout=settings.code.generation_timeout_seconds,
+            max_output_tokens=settings.code.max_generation_tokens,
+            reasoning={"effort": settings.code.generation_reasoning_effort},
         )
         code = _plain_code(response.output_text)
         code_id = uuid.uuid4().hex
@@ -167,7 +193,8 @@ class CsvTools:
         with script.open("x", encoding="utf-8", newline="\n") as handle:
             handle.write(code)
         logger.info("Saved generated code: %s", script)
-        return {"code_id": code_id, "code": code, "script_path": str(script)}
+        return {"code_id": code_id, "code": code, "script_path": str(script),
+                "generation_seconds": time.perf_counter() - started}
 
     @validate_code_id
     @require_saved_code
@@ -227,12 +254,13 @@ class CsvTools:
         selected = read_aggregates(Path(aggregation_path))
         logger.info("Requesting summary for %d validated aggregates", len(selected))
         response = self.client.responses.parse(
-            model=self.model, store=False,
+            model=self.summary_model, store=False,
             instructions=settings.prompts.summary_system_prompt,
             input=json.dumps({
                 "objective": objective, "aggregates": selected
             }),
             text_format=SummaryOutput,
+            timeout=FOUNDRY_REQUEST_TIMEOUT_SECONDS,
         )
         if response.output_parsed is None:
             raise ValueError("Analysis report has no structured output")

@@ -1,0 +1,14 @@
+<section class="client-banner{% if banner_class is defined %} {{ banner_class }}{% endif %}" aria-label="Client sélectionné">
+  <div class="client-icon" aria-hidden="true">♙</div>
+  <div class="identity">
+    <div class="client-name"><strong>{{ customer.name }}</strong><small> — Naissance : {{ view.birth_date }} à {{ customer.birth_place }}{% if view.age is not none %}, {{ view.age }} ans{% endif %}, {{ customer.civil_status }}</small></div>
+    <div class="badges">
+      {% for label, style in view.badges %}<span class="badge {{ style }}">{{ label }}</span>{% endfor %}
+    </div>
+  </div>
+  <div class="client-actions">
+    <span class="grc">ID GRC : {{ customer.grc_id }}&nbsp; ▣</span>
+    {% if show_rdv_action is defined and show_rdv_action %}<a class="rdv-link" href="{{ url_for('rdv', customer=customer.id) }}">Préparer prochain RDV <span aria-hidden="true">→</span></a>{% endif %}
+    {% if show_back_action is defined and show_back_action %}<a class="rdv-link" href="{{ url_for('index', customer=customer.id) }}"><span aria-hidden="true">←</span> Retour à la synthèse</a>{% endif %}
+  </div>
+</section>

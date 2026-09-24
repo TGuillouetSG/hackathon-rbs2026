@@ -20,6 +20,7 @@ class FoundryClient:
             else f'{configured_endpoint}/openai/v1'
         )
         self.deployment_name = os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME')
+        self.code_deployment_name = os.getenv('AZURE_OPENAI_CODE_DEPLOYMENT_NAME') or self.deployment_name
 
         if not self.api_key or not configured_endpoint or not self.deployment_name:
             raise ValueError(
@@ -30,6 +31,7 @@ class FoundryClient:
         self.client = OpenAI(
             base_url=self.endpoint,
             api_key=self.api_key,
+            max_retries=0,
         )
 
     def query(self, system_prompt: str, query: str) -> str:
