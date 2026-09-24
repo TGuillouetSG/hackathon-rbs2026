@@ -8,7 +8,7 @@ import re
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Dict, List
+from typing import Any
 
 from dotenv import load_dotenv
 
@@ -21,6 +21,7 @@ from config import settings
 load_dotenv(Path(__file__).resolve().parent / ".env")
 logger = logging.getLogger(__name__)
 
+
 def _plain_code(text: str) -> str:
     text = text.strip()
     match = re.fullmatch(r"```(?:python)?\s*\n(.*?)\n```", text, flags=re.DOTALL | re.IGNORECASE)
@@ -31,7 +32,7 @@ def _plain_code(text: str) -> str:
     return code
 
 
-def _parse_json_text(text: str) -> Dict[str, Any]:
+def _parse_json_text(text: str) -> dict[str, Any]:
     text = text.strip()
     if text.startswith("```"):
         text = re.sub(r"^```(?:json)?\s*\n|\n```$", "", text, flags=re.IGNORECASE)
@@ -41,11 +42,11 @@ def _parse_json_text(text: str) -> Dict[str, Any]:
     return result
 
 
-def _code_calls(response: Any) -> List[Any]:
+def _code_calls(response: Any) -> list[Any]:
     return [item for item in response.output if item.type == "code_interpreter_call"]
 
 
-def _profile(response: Any) -> Dict[str, Any]:
+def _profile(response: Any) -> dict[str, Any]:
     calls = _code_calls(response)
     if not calls:
         raise RuntimeError("Foundry did not invoke Code Interpreter for profiling")
@@ -54,19 +55,9 @@ def _profile(response: Any) -> Dict[str, Any]:
         for output in getattr(call, "outputs", []) or []:
             if getattr(output, "type", None) == "logs":
                 texts.append(getattr(output, "logs", "") or "")
-    for value in texts:
-        for line in value.splitlines():
-            if "PROFILE_JSON:" in line:
-                candidate = line.split("PROFILE_JSON:", 1)[1].strip()
-                try:
-                    profile = _parse_json_text(candidate)
-                    break
-                except (ValueError, json.JSONDecodeError):
-                    continue
-        else:
-            continue
-        break
-    else:
+
+    profile = _find_profile(texts)
+    if profile is None:
         try:
             profile = _parse_json_text(texts[0])
         except (ValueError, json.JSONDecodeError) as exc:
@@ -76,7 +67,7 @@ def _profile(response: Any) -> Dict[str, Any]:
     columns = profile.get("columns")
     if not isinstance(columns, list) or not columns:
         raise ValueError("Profile has no columns")
-    clean_columns = []
+    clean_columns: list[dict[str, Any]] = []
     for column in columns:
         if not isinstance(column, dict):
             raise ValueError("Profile column must be an object")
@@ -89,8 +80,22 @@ def _profile(response: Any) -> Dict[str, Any]:
     return {"row_count": profile["row_count"], "columns": clean_columns}
 
 
-def _file_citations(response: Any) -> List[Any]:
-    citations = []
+def _find_profile(texts: list[str]) -> dict[str, Any] | None:
+    """Find the first valid PROFILE_JSON record in response text or interpreter logs."""
+    for text in texts:
+        for line in text.splitlines():
+            if "PROFILE_JSON:" not in line:
+                continue
+            candidate = line.split("PROFILE_JSON:", 1)[1].strip()
+            try:
+                return _parse_json_text(candidate)
+            except (ValueError, json.JSONDecodeError):
+                continue
+    return None
+
+
+def _file_citations(response: Any) -> list[Any]:
+    citations: list[Any] = []
     for item in response.output:
         if getattr(item, "type", None) != "message":
             continue
@@ -101,14 +106,14 @@ def _file_citations(response: Any) -> List[Any]:
     return citations
 
 
-def read_aggregates(path: Path) -> Dict[str, str]:
+def read_aggregates(path: Path) -> dict[str, str]:
     if path.stat().st_size > settings.code.max_aggregation_bytes:
         raise ValueError("Aggregation CSV exceeds 1 MiB")
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         if reader.fieldnames != ["aggregate_name", "value"]:
             raise ValueError("Aggregation CSV must have exactly aggregate_name,value columns")
-        values = {}
+        values: dict[str, str] = {}
         for row in reader:
             if len(values) >= settings.code.max_aggregates:
                 raise ValueError("Aggregation CSV exceeds 1000 results")
@@ -133,35 +138,43 @@ def read_aggregates(path: Path) -> Dict[str, str]:
 class CsvTools:
     def __init__(self, foundry: FoundryClient):
         self.model = foundry.deployment_name
-        self.openai = foundry.client
+        self.client = foundry.client
 
-    def _respond(self, file_ids: List[str], instructions: str, message: str) -> Any:
-        return self.openai.responses.create(
-            model=self.model, instructions=instructions, input=message, store=False,
-            tools=[{"type": "code_interpreter", "container": {
-                "type": "auto", "file_ids": file_ids,
-            }}],
+    def _respond(self, file_ids: list[str], instructions: str, message: str) -> Any:
+        return self.client.responses.create(
+            model=self.model,
+            instructions=instructions,
+            input=message,
+            store=False,
+            tools=[{
+                "type": "code_interpreter",
+                "container": {"type": "auto", "file_ids": file_ids},
+            }],
             tool_choice={"type": "code_interpreter"},
         )
 
-    def _cleanup(self, file_ids: List[str]) -> None:
+    def _cleanup(self, file_ids: list[str]) -> None:
         for file_id in file_ids:
             try:
-                self.openai.files.delete(file_id)
+                self.client.files.delete(file_id)
             except Exception:
                 logger.warning("Uploaded file cleanup failed", exc_info=True)
 
-    def _generate_code(self, profile: Dict[str, Any], objective: str, error: str = "") -> str:
+    def _generate_code(self, profile: dict[str, Any], objective: str, error: str = "") -> str:
         started = perf_counter()
         logger.info("Generating analysis.py from the dataset profile")
-        response = self.openai.responses.create(
-            model=self.model, store=False,
+        response = self.client.responses.create(
+            model=self.model,
+            store=False,
             instructions=settings.prompts.aggregator_prompt,
             input=json.dumps({"objective": objective, "profile": profile, "previous_error": error}),
         )
         code = _plain_code(response.output_text)
-        logger.info("Generated and validated Python in %.1fs (%d bytes)",
-                    perf_counter() - started, len(code.encode("utf-8")))
+        logger.info(
+            "Generated and validated Python in %.1fs (%d bytes)",
+            perf_counter() - started,
+            len(code.encode("utf-8")),
+        )
         return code
 
     def _download_aggregation(self, response: Any, path: Path) -> None:
@@ -173,7 +186,7 @@ class CsvTools:
             raise RuntimeError("Foundry did not cite aggregation.csv as a generated file")
         citation = citations[-1]
         logger.info("Downloading aggregation.csv from Code Interpreter")
-        content = self.openai.containers.files.content.retrieve(
+        content = self.client.containers.files.content.retrieve(
             file_id=citation.file_id, container_id=citation.container_id
         )
         path.write_bytes(content.read())
@@ -188,14 +201,15 @@ class CsvTools:
         if not any("analysis.py" in (getattr(call, "code", "") or "") for call in calls):
             raise RuntimeError("Code Interpreter did not reference the uploaded analysis.py")
 
-    def summarize(self, aggregation_path: str, objective: str) -> Dict[str, Any]:
+    def summarize(self, aggregation_path: str, objective: str) -> dict[str, Any]:
         """Read saved aggregates and create a report using the dedicated summary prompt."""
         path = Path(aggregation_path)
         selected = read_aggregates(path)
         started = perf_counter()
         logger.info("Generating report from %d selected aggregates", len(selected))
-        response = self.openai.responses.create(
-            model=self.model, store=False,
+        response = self.client.responses.create(
+            model=self.model,
+            store=False,
             instructions=settings.prompts.summary_system_prompt,
             input=json.dumps({"objective": objective, "aggregates": selected}),
         )
@@ -207,28 +221,38 @@ class CsvTools:
                 isinstance(value, str) for value in report[key]
             ):
                 raise ValueError("Analysis report is missing " + key)
-        logger.info("Report validated in %.1fs: %d insights, %d questions",
-                    perf_counter() - started, len(report["insights"]), len(report["questions"]))
-        report = {"selected_aggregates": selected, "summary": report["summary"],
-                  "questions": report["questions"], "insights": report["insights"],
-                  "final_answer": report["summary"]}
+        logger.info(
+            "Report validated in %.1fs: %d insights, %d questions",
+            perf_counter() - started,
+            len(report["insights"]),
+            len(report["questions"]),
+        )
+        report = {
+            "selected_aggregates": selected,
+            "summary": report["summary"],
+            "questions": report["questions"],
+            "insights": report["insights"],
+            "final_answer": report["summary"],
+        }
         report_path = path.with_name("report.json")
         report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
         return {"report_path": str(report_path), "report": report}
 
-    def aggregate(self, csv_path: str, objective: str, run_dir: str) -> Dict[str, str]:
+    def aggregate(self, csv_path: str, objective: str, run_dir: str) -> dict[str, str]:
         """Generate Python, execute it in Foundry, and save the aggregation CSV."""
         source = import_csv(Path(csv_path))
         run_dir = Path(run_dir)
         run_dir.mkdir(parents=True, exist_ok=True)
-        file_ids = []
+        file_ids: list[str] = []
         try:
             with source.open("rb") as handle:
-                uploaded = self.openai.files.create(purpose="assistants", file=handle)
+                uploaded = self.client.files.create(purpose="assistants", file=handle)
             file_ids.append(uploaded.id)
             logger.info("Profiling CSV schema with Code Interpreter")
             profile = _profile(self._respond(
-                [uploaded.id], settings.prompts.code_interpreter_profile_instructions, "Profile the attached source CSV.",
+                [uploaded.id],
+                settings.prompts.code_interpreter_profile_instructions,
+                "Profile the attached source CSV.",
             ))
             (run_dir / "profile.json").write_text(json.dumps(profile, indent=2), encoding="utf-8")
             error = ""
@@ -238,7 +262,7 @@ class CsvTools:
                 try:
                     script.write_text(self._generate_code(profile, objective, error), encoding="utf-8")
                     with script.open("rb") as handle:
-                        script_file = self.openai.files.create(purpose="assistants", file=handle)
+                        script_file = self.client.files.create(purpose="assistants", file=handle)
                     file_ids.append(script_file.id)
                     response = self._respond(
                         [uploaded.id, script_file.id], settings.prompts.code_interpreter_execution_instructions,
