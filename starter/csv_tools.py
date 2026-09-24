@@ -28,7 +28,7 @@ EXECUTION_TIMEOUT_SECONDS = 60
 class SummaryItem(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
 
-    Question: str
+    # Question: str
     Insight: str
     Signal_in_the_data: str
 
