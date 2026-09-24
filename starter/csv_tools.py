@@ -168,7 +168,7 @@ class CsvTools:
         """Profile column types and missing counts locally without sending CSV rows."""
         logger.info("Profiling CSV: %s", self.csv_path)
         with self.csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
-            reader = csv.reader(handle, delimiter=";")
+            reader = csv.reader(handle)
             names = next(reader, [])
             if (
                 not names

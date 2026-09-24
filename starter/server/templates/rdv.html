@@ -129,15 +129,29 @@
         return node;
       }
 
-      function questionList(questions) {
-        const list = element('ul');
-        questions.forEach(question => list.append(element('li', question)));
-        return list;
+      let reportItems = [];
+
+      function updateAgenda() {
+        agendaList.replaceChildren(element('li', 'Accueil et confirmation du motif du rendez-vous.'));
+        reportItems.forEach((item, index) => {
+          const agendaItem = element('li', item.Insight);
+          const selected = [...topicsList.querySelectorAll(`input[data-topic="${index}"]:checked`)];
+          if (selected.length) {
+            const questions = element('ul');
+            selected.forEach(input => questions.append(element('li', input.value)));
+            agendaItem.append(questions);
+          }
+          agendaList.append(agendaItem);
+        });
       }
 
+      topicsList.addEventListener('change', event => {
+        if (event.target.matches('input[type="checkbox"][data-topic]')) updateAgenda();
+      });
+
       function showReport(report) {
+        reportItems = report.items;
         topicsList.replaceChildren();
-        agendaList.replaceChildren(element('li', 'Accueil et confirmation du motif du rendez-vous.'));
         if (!report.items.length) {
           topicsList.append(element('p', 'Aucun sujet complet issu du CSV n’est disponible pour ce rendez-vous.'));
         }
@@ -148,18 +162,30 @@
           const details = element('details');
           details.append(element('summary', 'Signal dans les données'), element('p', item.signal_in_the_data));
           if (item.details) details.append(element('p', item.details));
-
-          const agendaItem = element('li', item.Insight);
-          if (Array.isArray(item.questions) && item.questions.length) {
-            details.append(element('p', 'Questions à poser'), questionList(item.questions));
-            agendaItem.append(questionList(item.questions));
-          }
-
           const topic = element('div', null, 'topic');
           topic.append(heading, details);
+
+          if (Array.isArray(item.questions) && item.questions.length) {
+            const questions = element('div', null, 'topic-questions');
+            questions.append(element('p', 'Questions à poser — cochez celles à ajouter à la trame'));
+            const questionList = element('ul');
+            item.questions.forEach(question => {
+              const label = element('label', null, 'question-option');
+              const checkbox = element('input');
+              checkbox.type = 'checkbox';
+              checkbox.value = question;
+              checkbox.dataset.topic = index;
+              label.append(checkbox, element('span', question));
+              const listItem = element('li');
+              listItem.append(label);
+              questionList.append(listItem);
+            });
+            questions.append(questionList);
+            topic.append(questions);
+          }
           topicsList.append(topic);
-          agendaList.append(agendaItem);
         });
+        updateAgenda();
       }
 
       function handleEvent(rawData) {

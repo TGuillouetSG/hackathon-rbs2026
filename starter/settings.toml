@@ -21,6 +21,7 @@ aggregation_task="Create an aggregation.csv that answers the objective."
 
 code_instructions="""Write one complete Python program for the requested CSV analysis.
 Use standard pandas.
+When iterating DataFrame rows, use to_dict('records') and access columns with row['column_name']. Never use itertuples() or row.column attribute access: pandas renames tuple fields for column names beginning with an underscore or otherwise invalid as Python identifiers.
 Read the input from os.environ['CSV_INPUT_PATH'] and write a CSV to os.environ['AGGREGATION_OUTPUT_PATH'] with exactly the header aggregate_name,value.
 Match source column names from the profile exactly, including accents, apostrophes and trailing spaces; normalize punctuation when comparing names. For a nonempty input, write at least one numeric aggregate even when no specific signal is found.
 Names must be unique and values finite numbers.
@@ -50,7 +51,7 @@ summary_system_prompt="""
     1. Insight: a short Insight name
     2. signal_in_the_data: the concrete aggregate values supporting the insight.
     3. details (one or more paragraphs expanding on the data signal).
-    4. questions: a nonempty list of specific, open-ended questions the advisor can ask the customer to better understand the situation and the insight. Questions should be non-intrusive and should lead to open discussion.
+    4. questions: a nonempty list of specific, open-ended questions the advisor can ask the customer to better understand the situation and the insight. Questions should be non-intrusive and should lead to open discussion and propose SG credit product.
 
     ## RULES
     - Order the signals in the list based on their importance when we are preparing a meeting with the client.
