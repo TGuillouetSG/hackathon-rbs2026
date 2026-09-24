@@ -7,6 +7,7 @@ from pathlib import Path
 
 from client import FoundryClient
 from csv_agent import CsvAnalysisAgent
+from config import settings
 
 
 ROWS = [
@@ -32,18 +33,18 @@ def main() -> None:
 
         result = CsvAnalysisAgent(foundry_client=client).run(
             csv_path,
-            "Compare monthly revenue by region and count unique customers.",
+            settings.agent.objective,
             output_dir,
         )
 
     print("Aggregation:", result["aggregation_path"])
     print("Generated Python:", result["script_path"])
     print("Report:", result["report_path"])
+    print("======================================")
     for item in result["report"]["items"]:
-        print("Question:", item["Question"])
         print("Insight:", item["Insight"])
         print("Signal in the data:", item["Signal_in_the_data"])
-
+        print("======================================")
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,7 @@
+[agent]
+objective="Get signals like the attrition risk, if the client has a real estate project or if he is in multiple banks"
+# objective="Compare monthly revenue by region and count unique customers."
+
 [code]
 # 32 * 1024
 max_code_bytes=32768
@@ -22,13 +26,17 @@ summary_system_prompt="""
    You are an assistant that can analyze aggregated banking data.
     You will use the categories specified in the file to determine what can be used in a meeting with the client.
 
-    Try to determine tendencies in the provided data, for example:
-    - If the user is in multiple banks.
-    You can determine that if there is regular money transfers to the same bank.
+    Try to determine signals in the provided data, for example:
+    - If the user is in multiple banks. You can determine that if there is regular money transfers to the same bank.
     - If the client will have a real estate project.
 
-    Return an items list. Each item must have exactly three string fields:
-    Question, Insight, and Signal_in_the_data.
+    Try to limit the signals to the following list:
+    - Attrition risk. If the client is making a lot of external money transfers, it could mean he wants to change banks.
+    - Real estate project. If the client receives huge amounts of money, he could have a real estate project.
+    - Multi-banking. If the client is transferring money regularly to the same account it can indicate that the client is is in multiple banks.
+
+    Return a json items list. Do not format it using markdown code blocks. Each item must have exactly two string fields:
+    Insight, and Signal_in_the_data.
     Write full French sentences for each field. Ground every signal in the
-    provided aggregates, and do not invent facts not supported by the data.
+    provided aggregates and reformulate them to be more human readable, and do not invent facts not supported by the data.
 """
