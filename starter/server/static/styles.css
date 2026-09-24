@@ -1045,6 +1045,13 @@ a {
 .topic details { margin: 7px 0 0 17px; font-size: 11px; }
 .topic summary { width: max-content; color: #3154a2; cursor: pointer; font-weight: 700; }
 .topic details p { margin: 7px 0 0; }
+.topic-questions { margin: 10px 0 0 17px; }
+.topic-questions p { margin: 0 0 7px; color: #596577; font-weight: 600; }
+.topic-questions ul { margin: 0; padding-left: 20px; }
+.topic-questions li { padding: 2px 0; }
+.question-option { display: flex; align-items: flex-start; gap: 9px; padding: 5px 0; color: #384255; font-size: 11px; line-height: 1.5; cursor: pointer; }
+.question-option input { flex: none; margin: 2px 0 0; accent-color: #19764c; cursor: pointer; }
+.question-option input:focus-visible { outline: 2px solid #315bd3; outline-offset: 2px; }
 .brief-footer { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-top: 17px; }
 .brief-footer p { margin: 0; color: #7b8492; font-size: 10px; text-align: right; }
 .agenda-button { border: 0; border-radius: 6px; background: #19764c; color: #fff; padding: 11px 15px; cursor: pointer; font-weight: 700; font-size: 12px; }
