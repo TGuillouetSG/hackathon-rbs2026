@@ -4,7 +4,8 @@ import io
 
 MAX_CSV_BYTES = 10 * 1024 * 1024
 
-def import_csv(csv_path:Path):
+
+def import_csv(csv_path: Path):
     source = Path(csv_path).resolve()
     if not source.is_file() or source.suffix.lower() != ".csv":
         raise ValueError("Input must be an existing CSV file")

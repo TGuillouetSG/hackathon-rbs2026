@@ -9,18 +9,21 @@ from client import FoundryClient
 from csv_agent import CsvAnalysisAgent
 from config import settings
 
+
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+    )
     client_number = "2"
-    
+
     client = FoundryClient()
     output_dir = Path(__file__).resolve().parent / "output"
-    csv_path = Path(__file__).resolve().parent / "inputs" / f"client-00{client_number}.csv"
-    prestations_csv_path = Path(__file__).resolve().parent / "inputs" / f"client-00{client_number}-prestations.csv"
+    csv_path = (
+        Path(__file__).resolve().parent / "inputs" / f"client-00{client_number}.csv"
+    )
 
     result = CsvAnalysisAgent(foundry_client=client).run(
         csv_path,
-        prestations_csv_path,
         settings.agent.objective,
         output_dir,
     )
@@ -34,6 +37,7 @@ def main() -> None:
         print("Signal in the data:", item["Signal_in_the_data"])
         print("Details:", item["details"])
         print("======================================")
+
 
 if __name__ == "__main__":
     main()

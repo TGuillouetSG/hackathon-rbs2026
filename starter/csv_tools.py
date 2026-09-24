@@ -28,6 +28,7 @@ MAX_OUTPUT_CHARS = 8000
 EXECUTION_TIMEOUT_SECONDS = 60
 FOUNDRY_REQUEST_TIMEOUT_SECONDS = 90
 
+
 class SummaryItem(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
 
@@ -48,11 +49,13 @@ class SummaryOutput(BaseModel):
 
     items: list[SummaryItem]
 
+
 _Result = TypeVar("_Result")
 
 
 def validate_code_id(method: Callable[..., _Result]) -> Callable[..., _Result]:
     """Reject code IDs that are not lowercase UUID hex strings."""
+
     @wraps(method)
     def wrapper(self: "CsvTools", code_id: str, *args: Any, **kwargs: Any) -> _Result:
         if not isinstance(code_id, str) or not re.fullmatch(r"[0-9a-f]{32}", code_id):
@@ -64,6 +67,7 @@ def validate_code_id(method: Callable[..., _Result]) -> Callable[..., _Result]:
 
 def require_saved_code(method: Callable[..., _Result]) -> Callable[..., _Result]:
     """Require the program to exist in this run's program directory."""
+
     @wraps(method)
     def wrapper(self: "CsvTools", code_id: str, *args: Any, **kwargs: Any) -> _Result:
         if not (self.program_dir / f"{code_id}.py").is_file():
@@ -75,7 +79,9 @@ def require_saved_code(method: Callable[..., _Result]) -> Callable[..., _Result]
 
 def _plain_code(text: str) -> str:
     text = text.strip()
-    match = re.fullmatch(r"```(?:python)?\s*\n(.*?)\n```", text, flags=re.DOTALL | re.IGNORECASE)
+    match = re.fullmatch(
+        r"```(?:python)?\s*\n(.*?)\n```", text, flags=re.DOTALL | re.IGNORECASE
+    )
     code = (match.group(1) if match else text).strip() + "\n"
     if not code.strip() or len(code.encode("utf-8")) > settings.code.max_code_bytes:
         raise ValueError("Generated Python is empty or exceeds the code size limit")
@@ -99,7 +105,9 @@ def read_aggregates(path: Path) -> dict[str, str]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         if reader.fieldnames != ["aggregate_name", "value"]:
-            raise ValueError("Aggregation CSV must have exactly aggregate_name,value columns")
+            raise ValueError(
+                "Aggregation CSV must have exactly aggregate_name,value columns"
+            )
         values: dict[str, str] = {}
         for row in reader:
             if len(values) >= settings.code.max_aggregates:
@@ -125,7 +133,9 @@ class CsvTools:
     """Tools bound to one run so a code ID can only resolve within that run."""
 
     def __init__(self, foundry: FoundryClient, run_dir: Path, csv_path: Path):
-        self.code_model = getattr(foundry, "code_deployment_name", None) or foundry.deployment_name
+        self.code_model = (
+            getattr(foundry, "code_deployment_name", None) or foundry.deployment_name
+        )
         self.summary_model = foundry.deployment_name
         self.client = foundry.client
         self.run_dir = Path(run_dir).resolve()
@@ -136,8 +146,9 @@ class CsvTools:
         normalized_path = self.run_dir / "input_normalized.csv"
         rows = read_csv_rows(source)
         with normalized_path.open("w", encoding="utf-8", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(rows[0]) if rows else [],
-                                    lineterminator="\n")
+            writer = csv.DictWriter(
+                handle, fieldnames=list(rows[0]) if rows else [], lineterminator="\n"
+            )
             if rows:
                 writer.writeheader()
                 writer.writerows(rows)
@@ -151,7 +162,11 @@ class CsvTools:
         with self.csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
             reader = csv.reader(handle, delimiter=";")
             names = next(reader, [])
-            if not names or any(not name for name in names) or len(names) != len(set(names)):
+            if (
+                not names
+                or any(not name for name in names)
+                or len(names) != len(set(names))
+            ):
                 raise ValueError("CSV must have nonempty, unique column names")
             missing, numeric, count = [0] * len(names), [True] * len(names), 0
             for row in reader:
@@ -166,11 +181,17 @@ class CsvTools:
                             Decimal(value)
                         except InvalidOperation:
                             numeric[index] = False
-        profile = {"row_count": count, "columns": [
-            {"name": name, "dtype": "number" if numeric[index] else "string",
-             "missing_count": missing[index]}
-            for index, name in enumerate(names)
-        ]}
+        profile = {
+            "row_count": count,
+            "columns": [
+                {
+                    "name": name,
+                    "dtype": "number" if numeric[index] else "string",
+                    "missing_count": missing[index],
+                }
+                for index, name in enumerate(names)
+            ],
+        }
         (self.run_dir / "profile.json").write_text(
             json.dumps(profile, ensure_ascii=False, indent=2), encoding="utf-8"
         )
@@ -182,8 +203,11 @@ class CsvTools:
         started = time.perf_counter()
         logger.info("Requesting CSV analysis code from Foundry")
         response = self.client.responses.create(
-            model=self.code_model, store=False, instructions=settings.prompts.code_instructions,
-            input=prompt, timeout=settings.code.generation_timeout_seconds,
+            model=self.code_model,
+            store=False,
+            instructions=settings.prompts.code_instructions,
+            input=prompt,
+            timeout=settings.code.generation_timeout_seconds,
             max_output_tokens=settings.code.max_generation_tokens,
             reasoning={"effort": settings.code.generation_reasoning_effort},
         )
@@ -193,8 +217,12 @@ class CsvTools:
         with script.open("x", encoding="utf-8", newline="\n") as handle:
             handle.write(code)
         logger.info("Saved generated code: %s", script)
-        return {"code_id": code_id, "code": code, "script_path": str(script),
-                "generation_seconds": time.perf_counter() - started}
+        return {
+            "code_id": code_id,
+            "code": code,
+            "script_path": str(script),
+            "generation_seconds": time.perf_counter() - started,
+        }
 
     @validate_code_id
     @require_saved_code
@@ -210,27 +238,56 @@ class CsvTools:
         for key in tuple(environment):
             if key.startswith(("AZURE_OPENAI_", "OPENAI_")):
                 environment.pop(key)
-        environment.update({
-            "CSV_INPUT_PATH": str(self.csv_path),
-            "AGGREGATION_OUTPUT_PATH": str(aggregation),
-        })
+        environment.update(
+            {
+                "CSV_INPUT_PATH": str(self.csv_path),
+                "AGGREGATION_OUTPUT_PATH": str(aggregation),
+            }
+        )
         try:
             completed = subprocess.run(
-                [sys.executable, "-I", str(script)], cwd=work_dir, env=environment,
-                capture_output=True, text=True, errors="replace",
-                timeout=EXECUTION_TIMEOUT_SECONDS, check=False,
+                [sys.executable, "-I", str(script)],
+                cwd=work_dir,
+                env=environment,
+                capture_output=True,
+                text=True,
+                errors="replace",
+                timeout=EXECUTION_TIMEOUT_SECONDS,
+                check=False,
             )
-            stdout, stderr = completed.stdout[-MAX_OUTPUT_CHARS:], completed.stderr[-MAX_OUTPUT_CHARS:]
+            stdout, stderr = (
+                completed.stdout[-MAX_OUTPUT_CHARS:],
+                completed.stderr[-MAX_OUTPUT_CHARS:],
+            )
             returncode = completed.returncode
-            error = (stderr or f"Python exited with status {returncode}") if returncode else ""
+            error = (
+                (stderr or f"Python exited with status {returncode}")
+                if returncode
+                else ""
+            )
         except subprocess.TimeoutExpired as exc:
-            logger.warning("Generated code timed out after %d seconds (code_id=%s)", EXECUTION_TIMEOUT_SECONDS, code_id)
+            logger.warning(
+                "Generated code timed out after %d seconds (code_id=%s)",
+                EXECUTION_TIMEOUT_SECONDS,
+                code_id,
+            )
             stdout = exc.stdout or b""
             stderr = exc.stderr or b""
-            stdout = stdout.decode("utf-8", "replace") if isinstance(stdout, bytes) else stdout
-            stderr = stderr.decode("utf-8", "replace") if isinstance(stderr, bytes) else stderr
+            stdout = (
+                stdout.decode("utf-8", "replace")
+                if isinstance(stdout, bytes)
+                else stdout
+            )
+            stderr = (
+                stderr.decode("utf-8", "replace")
+                if isinstance(stderr, bytes)
+                else stderr
+            )
             stdout, stderr = stdout[-MAX_OUTPUT_CHARS:], stderr[-MAX_OUTPUT_CHARS:]
-            returncode, error = None, f"Execution timed out after {EXECUTION_TIMEOUT_SECONDS} seconds"
+            returncode, error = (
+                None,
+                f"Execution timed out after {EXECUTION_TIMEOUT_SECONDS} seconds",
+            )
         files = sorted(str(path) for path in work_dir.rglob("*") if path.is_file())
         if not error:
             try:
@@ -241,12 +298,22 @@ class CsvTools:
             shutil.copyfile(aggregation, self.run_dir / "aggregation.csv")
             logger.info("Validated aggregation CSV for code_id=%s", code_id)
         else:
-            logger.warning("Generated code failed validation or execution (code_id=%s, returncode=%s)", code_id, returncode)
+            logger.warning(
+                "Generated code failed validation or execution (code_id=%s, returncode=%s)",
+                code_id,
+                returncode,
+            )
         return {
-            "code_id": code_id, "returncode": returncode, "stdout": stdout,
-            "stderr": stderr, "generated_files": files,
-            "aggregation_path": str(self.run_dir / "aggregation.csv") if not error else None,
-            "success": not error, "error": error[-MAX_OUTPUT_CHARS:],
+            "code_id": code_id,
+            "returncode": returncode,
+            "stdout": stdout,
+            "stderr": stderr,
+            "generated_files": files,
+            "aggregation_path": str(self.run_dir / "aggregation.csv")
+            if not error
+            else None,
+            "success": not error,
+            "error": error[-MAX_OUTPUT_CHARS:],
         }
 
     def summarize(self, aggregation_path: str, objective: str) -> dict[str, Any]:
@@ -254,11 +321,10 @@ class CsvTools:
         selected = read_aggregates(Path(aggregation_path))
         logger.info("Requesting summary for %d validated aggregates", len(selected))
         response = self.client.responses.parse(
-            model=self.summary_model, store=False,
+            model=self.summary_model,
+            store=False,
             instructions=settings.prompts.summary_system_prompt,
-            input=json.dumps({
-                "objective": objective, "aggregates": selected
-            }),
+            input=json.dumps({"objective": objective, "aggregates": selected}),
             text_format=SummaryOutput,
             timeout=FOUNDRY_REQUEST_TIMEOUT_SECONDS,
         )
@@ -270,6 +336,8 @@ class CsvTools:
             "items": [item.model_dump() for item in items],
         }
         report_path = self.run_dir / "report.json"
-        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        report_path.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         logger.info("Saved CSV analysis report: %s", report_path)
         return {"report_path": str(report_path), "report": report}

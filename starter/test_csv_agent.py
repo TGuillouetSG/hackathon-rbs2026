@@ -40,33 +40,52 @@ class FakeResponses:
     def parse(self, **kwargs):
         self.calls.append(kwargs)
         assert kwargs["text_format"] is SummaryOutput
-        return SimpleNamespace(output_parsed=SummaryOutput.model_validate({
-            "items": [{"Insight": "Le revenu total est 5.",
-                       "Signal_in_the_data": "total_revenue vaut 5."}]
-        }))
+        return SimpleNamespace(
+            output_parsed=SummaryOutput.model_validate(
+                {
+                    "items": [
+                        {
+                            "Insight": "Le revenu total est 5.",
+                            "Signal_in_the_data": "total_revenue vaut 5.",
+                        }
+                    ]
+                }
+            )
+        )
 
 
 class CsvAgentTests(unittest.TestCase):
     def test_summary_item_has_the_api_topic_fields(self):
-        self.assertEqual(set(SummaryItem.model_fields),
-                         {"Insight", "Signal_in_the_data"})
-        item = SummaryItem.model_validate({
-            "Insight": "Le revenu total est 5.",
-            "Signal_in_the_data": "total_revenue vaut 5.",
-        })
+        self.assertEqual(
+            set(SummaryItem.model_fields), {"Insight", "Signal_in_the_data"}
+        )
+        item = SummaryItem.model_validate(
+            {
+                "Insight": "Le revenu total est 5.",
+                "Signal_in_the_data": "total_revenue vaut 5.",
+            }
+        )
         self.assertEqual(set(item.model_dump()), {"Insight", "Signal_in_the_data"})
         with self.assertRaises(ValidationError):
-            SummaryItem.model_validate({"Insight": " ",
-                                        "Signal_in_the_data": "Un chiffre."})
+            SummaryItem.model_validate(
+                {"Insight": " ", "Signal_in_the_data": "Un chiffre."}
+            )
         with self.assertRaises(ValidationError):
-            SummaryItem.model_validate({"Question": "Pourquoi ?", "Insight": "Un constat.",
-                                        "Signal_in_the_data": "Un chiffre."})
+            SummaryItem.model_validate(
+                {
+                    "Question": "Pourquoi ?",
+                    "Insight": "Un constat.",
+                    "Signal_in_the_data": "Un chiffre.",
+                }
+            )
 
     def make_run(self, root, programs):
         source = root / "input.csv"
         source.write_text("revenue\n2\n3\n", encoding="utf-8")
         responses = FakeResponses(programs)
-        foundry = SimpleNamespace(deployment_name="fake", client=SimpleNamespace(responses=responses))
+        foundry = SimpleNamespace(
+            deployment_name="fake", client=SimpleNamespace(responses=responses)
+        )
         agent = CsvAnalysisAgent(foundry_client=foundry)
         return source, responses, agent
 
@@ -75,15 +94,23 @@ class CsvAgentTests(unittest.TestCase):
             root = Path(temporary)
             source, responses, agent = self.make_run(root, [GOOD_CODE])
             result = agent.run(source, "Total revenue", root / "output")
-            self.assertEqual(read_aggregates(Path(result["aggregation_path"])), {"total_revenue": "5"})
+            self.assertEqual(
+                read_aggregates(Path(result["aggregation_path"])),
+                {"total_revenue": "5"},
+            )
             self.assertEqual(Path(result["script_path"]).read_text(), GOOD_CODE)
             self.assertEqual(Path(result["script_path"]).stem, result["code_id"])
             self.assertEqual(result["execution"]["stdout"].strip(), "computed")
             self.assertEqual(result["execution"]["stderr"], "")
-            self.assertIn("aggregation.csv", Path(result["execution"]["generated_files"][0]).name)
-            self.assertEqual(result["report"]["items"][0]["Insight"], "Le revenu total est 5.")
-            self.assertEqual(set(result["report"]["items"][0]),
-                             {"Insight", "Signal_in_the_data"})
+            self.assertIn(
+                "aggregation.csv", Path(result["execution"]["generated_files"][0]).name
+            )
+            self.assertEqual(
+                result["report"]["items"][0]["Insight"], "Le revenu total est 5."
+            )
+            self.assertEqual(
+                set(result["report"]["items"][0]), {"Insight", "Signal_in_the_data"}
+            )
             self.assertGreaterEqual(result["generation_seconds"], 0)
             self.assertEqual(len(responses.calls), 2)
             self.assertTrue(all(call["store"] is False for call in responses.calls))
@@ -107,8 +134,17 @@ class CsvAgentTests(unittest.TestCase):
             first = agent.run(source, "Total revenue", root / "output")
             second = agent.run(source, "Total revenue", root / "output")
             self.assertNotEqual(first["code_id"], second["code_id"])
-            self.assertEqual(len([call for call in responses.calls
-                                  if call.get("instructions") == settings.prompts.code_instructions]), 2)
+            self.assertEqual(
+                len(
+                    [
+                        call
+                        for call in responses.calls
+                        if call.get("instructions")
+                        == settings.prompts.code_instructions
+                    ]
+                ),
+                2,
+            )
 
     def test_code_generation_can_use_separate_deployment(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -125,7 +161,11 @@ class CsvAgentTests(unittest.TestCase):
             source, responses, agent = self.make_run(root, [BAD_CODE, GOOD_CODE])
             with self.assertRaisesRegex(RuntimeError, "broken program"):
                 agent.run(source, "Total revenue", root / "output")
-            generation_calls = [call for call in responses.calls if call["instructions"] == settings.prompts.code_instructions]
+            generation_calls = [
+                call
+                for call in responses.calls
+                if call["instructions"] == settings.prompts.code_instructions
+            ]
             self.assertEqual(len(generation_calls), 1)
             self.assertEqual(len(list((root / "output").rglob("*.py"))), 1)
             self.assertFalse(list((root / "output").rglob("report.json")))
@@ -133,20 +173,34 @@ class CsvAgentTests(unittest.TestCase):
     def test_syntax_error_stops_before_execution(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            source, responses, agent = self.make_run(root, ["invalid python !!!", GOOD_CODE])
+            source, responses, agent = self.make_run(
+                root, ["invalid python !!!", GOOD_CODE]
+            )
             with self.assertRaisesRegex(RuntimeError, "invalid syntax"):
                 agent.run(source, "Total revenue", root / "output")
-            generation_calls = [call for call in responses.calls if call["instructions"] == settings.prompts.code_instructions]
+            generation_calls = [
+                call
+                for call in responses.calls
+                if call["instructions"] == settings.prompts.code_instructions
+            ]
             self.assertEqual(len(generation_calls), 1)
             self.assertFalse(list((root / "output").rglob("*.py")))
 
     def test_missing_aggregation_stops_after_one_generation(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            source, responses, agent = self.make_run(root, ["print('no output')\n", GOOD_CODE])
-            with self.assertRaisesRegex(RuntimeError, "Invalid or missing aggregation.csv"):
+            source, responses, agent = self.make_run(
+                root, ["print('no output')\n", GOOD_CODE]
+            )
+            with self.assertRaisesRegex(
+                RuntimeError, "Invalid or missing aggregation.csv"
+            ):
                 agent.run(source, "Total revenue", root / "output")
-            generation_calls = [call for call in responses.calls if call["instructions"] == settings.prompts.code_instructions]
+            generation_calls = [
+                call
+                for call in responses.calls
+                if call["instructions"] == settings.prompts.code_instructions
+            ]
             self.assertEqual(len(generation_calls), 1)
 
     def test_failed_execution_never_summarizes(self):

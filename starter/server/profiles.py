@@ -47,14 +47,17 @@ def verified_demo_topics(customer):
     property_operations = []
     for raw_row in rows:
         # Bank exports may pad the final column name (for example "evenement ").
-        row = {name.strip(): value for name, value in raw_row.items() if name is not None}
+        row = {
+            name.strip(): value for name, value in raw_row.items() if name is not None
+        }
         category = row.get("categorie", "")
         label = row.get("libelle", row.get("Libellé", ""))
         detail = row.get("Détail de l'écriture", "")
         event = row.get("evenement", "")
         amount = row.get("montant_eur", row.get("Montant de l'opération", "0"))
-        if ((category == "Virement externe" and "Banque" in label)
-                or event.strip().lower() == "virement banque externe"):
+        if (
+            category == "Virement externe" and "Banque" in label
+        ) or event.strip().lower() == "virement banque externe":
             # Prefer the transaction detail because bank-export labels are often generic.
             recipient = detail or label
             bank_match = re.search(r"POUR:\s*(.*?)\s+\d{2}\s+\d{2}\s+BQ\b", recipient)
@@ -69,23 +72,29 @@ def verified_demo_topics(customer):
         if len(transfers) < 3:
             continue
         total = sum((-Decimal(row["montant"]) for row in transfers), Decimal(0))
-        topics.append({
-            "Insight": "Des virements réguliers vers une autre banque justifient de vérifier une éventuelle multi-bancarité.",
-            "Signal_in_the_data": (
-                f"{len(transfers)} virements vers {recipient} totalisent {_euros(total)} "
-                "sur la période observée ; cela ne confirme pas à lui seul une autre relation bancaire."
-            ),
-        })
+        topics.append(
+            {
+                "Insight": "Des virements réguliers vers une autre banque justifient de vérifier une éventuelle multi-bancarité.",
+                "Signal_in_the_data": (
+                    f"{len(transfers)} virements vers {recipient} totalisent {_euros(total)} "
+                    "sur la période observée ; cela ne confirme pas à lui seul une autre relation bancaire."
+                ),
+            }
+        )
 
     if property_operations:
-        total = sum((-Decimal(row["montant_eur"]) for row in property_operations), Decimal(0))
-        topics.append({
-            "Insight": "Un éventuel projet immobilier mérite d'être exploré avec le client.",
-            "Signal_in_the_data": (
-                f"{len(property_operations)} opérations classées comme frais de projet immobilier "
-                f"totalisent {_euros(total)} de débits ; le projet reste à confirmer."
-            ),
-        })
+        total = sum(
+            (-Decimal(row["montant_eur"]) for row in property_operations), Decimal(0)
+        )
+        topics.append(
+            {
+                "Insight": "Un éventuel projet immobilier mérite d'être exploré avec le client.",
+                "Signal_in_the_data": (
+                    f"{len(property_operations)} opérations classées comme frais de projet immobilier "
+                    f"totalisent {_euros(total)} de débits ; le projet reste à confirmer."
+                ),
+            }
+        )
     return topics[:3]
 
 
@@ -98,7 +107,9 @@ def _years_since(value):
     if not start:
         return None
     today = date.today()
-    return today.year - start.year - ((today.month, today.day) < (start.month, start.day))
+    return (
+        today.year - start.year - ((today.month, today.day) < (start.month, start.day))
+    )
 
 
 def _display_date(value):
@@ -117,11 +128,18 @@ def profile_view(customer):
     if customer["address_needs_update"]:
         alerts.append(("Adresse", "Adresse à mettre à jour."))
         actions.append("Confirmer l’adresse avec le client.")
-    missing_contact = [label for label, key in (("téléphone", "phone"), ("e-mail", "email"))
-                       if not customer[key]]
+    missing_contact = [
+        label
+        for label, key in (("téléphone", "phone"), ("e-mail", "email"))
+        if not customer[key]
+    ]
     if missing_contact:
-        alerts.append(("Coordonnées", "À renseigner : " + ", ".join(missing_contact) + "."))
-        actions.append("Demander les coordonnées manquantes : " + ", ".join(missing_contact) + ".")
+        alerts.append(
+            ("Coordonnées", "À renseigner : " + ", ".join(missing_contact) + ".")
+        )
+        actions.append(
+            "Demander les coordonnées manquantes : " + ", ".join(missing_contact) + "."
+        )
     if customer["undelivered_mail_risk"]:
         alerts.append(("Courrier", "Risque de pli non distribué signalé."))
         actions.append("Vérifier le risque de pli non distribué.")
@@ -130,7 +148,9 @@ def profile_view(customer):
         actions.append("Compléter la profession du client.")
     if customer.get("property_signal"):
         alerts.append(("Projet immobilier possible", customer["property_signal"]))
-        actions.append("Demander si un projet immobilier est en cours et discuter du besoin de financement.")
+        actions.append(
+            "Demander si un projet immobilier est en cours et discuter du besoin de financement."
+        )
     if not customer["last_appointment"]:
         alerts.append(("Relation", "Aucun rendez-vous affiché."))
 
