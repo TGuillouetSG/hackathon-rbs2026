@@ -16,7 +16,8 @@ in that execution's artifact directory. The script reads `CSV_INPUT_PATH` and
 writes `AGGREGATION_OUTPUT_PATH`. A run succeeds only after the resulting
 `aggregation.csv` passes validation; the summary model then sees only aggregate
 names and numeric values. The summary call uses Pydantic structured output and saves
-an `items` list. Each item has string `Insight` and `Signal_in_the_data` fields.
+an `items` list. Each item has string `Insight`, `Signal_in_the_data`, and
+`details` fields.
 
 Each run saves `profile.json`, all generated programs, execution artifacts,
 `aggregation.csv`, and `report.json` in a unique output directory. Failed runs
@@ -67,9 +68,8 @@ The page at `/rdv` automatically calls `CsvAnalysisAgent.run` through
 items as subjects to explore. Each card shows the insight and its data signal.
 The profile-based brief remains visible if analysis fails. Agent artifacts are
 saved under `starter/output/rdv/<id>/` in unique per-run subdirectories.
-When a successful agent run returns no complete topic, the demo calculates a
-limited, quantified topic directly from repeated external transfers or explicit
-property-project costs in the selected CSV.
+When the agent returns no complete topic, the page displays an empty-state
+warning. If analysis fails, the page displays an error instead of demo topics.
 
 Start the Flask app from `starter` with `uv run flask --app server.app run`.
 Starting from `starter/server` with `python -m flask --app app run` also works.
