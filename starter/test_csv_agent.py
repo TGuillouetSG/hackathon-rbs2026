@@ -47,6 +47,7 @@ class FakeResponses:
                         {
                             "Insight": "Le revenu total est 5.",
                             "Signal_in_the_data": "total_revenue vaut 5.",
+                            "details": "Le total calculé est de 5.",
                         }
                     ]
                 }
@@ -57,18 +58,25 @@ class FakeResponses:
 class CsvAgentTests(unittest.TestCase):
     def test_summary_item_has_the_api_topic_fields(self):
         self.assertEqual(
-            set(SummaryItem.model_fields), {"Insight", "Signal_in_the_data"}
+            set(SummaryItem.model_fields), {"Insight", "Signal_in_the_data", "details"}
         )
         item = SummaryItem.model_validate(
             {
                 "Insight": "Le revenu total est 5.",
                 "Signal_in_the_data": "total_revenue vaut 5.",
+                "details": "Le total calculé est de 5.",
             }
         )
-        self.assertEqual(set(item.model_dump()), {"Insight", "Signal_in_the_data"})
+        self.assertEqual(
+            set(item.model_dump()), {"Insight", "Signal_in_the_data", "details"}
+        )
         with self.assertRaises(ValidationError):
             SummaryItem.model_validate(
-                {"Insight": " ", "Signal_in_the_data": "Un chiffre."}
+                {
+                    "Insight": " ",
+                    "Signal_in_the_data": "Un chiffre.",
+                    "details": "Un détail.",
+                }
             )
         with self.assertRaises(ValidationError):
             SummaryItem.model_validate(
@@ -76,6 +84,7 @@ class CsvAgentTests(unittest.TestCase):
                     "Question": "Pourquoi ?",
                     "Insight": "Un constat.",
                     "Signal_in_the_data": "Un chiffre.",
+                    "details": "Un détail.",
                 }
             )
 
@@ -88,6 +97,20 @@ class CsvAgentTests(unittest.TestCase):
         )
         agent = CsvAnalysisAgent(foundry_client=foundry)
         return source, responses, agent
+
+    def test_profile_reads_normalized_bank_csv_columns(self):
+        data_dir = Path(__file__).resolve().parent / "data"
+        foundry = SimpleNamespace(deployment_name="fake", client=None)
+        with tempfile.TemporaryDirectory() as temporary:
+            for name, expected_column in (
+                ("demo_account_operations.csv", "evenement "),
+                ("marc_account_operations.csv", "montant_eur"),
+            ):
+                tools = CsvTools(foundry, Path(temporary) / name, data_dir / name)
+                profile = tools.profile()
+                names = [column["name"] for column in profile["columns"]]
+                self.assertIn(expected_column, names)
+                self.assertGreater(profile["row_count"], 0)
 
     def test_success_executes_saved_program_and_reports_files(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -109,7 +132,8 @@ class CsvAgentTests(unittest.TestCase):
                 result["report"]["items"][0]["Insight"], "Le revenu total est 5."
             )
             self.assertEqual(
-                set(result["report"]["items"][0]), {"Insight", "Signal_in_the_data"}
+                set(result["report"]["items"][0]),
+                {"Insight", "Signal_in_the_data", "details"},
             )
             self.assertGreaterEqual(result["generation_seconds"], 0)
             self.assertEqual(len(responses.calls), 2)

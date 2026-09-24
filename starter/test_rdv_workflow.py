@@ -9,7 +9,11 @@ from server.app import STARTER_DIR, app, _appointment_topics
 
 
 TOPICS = [
-    {"Insight": f"Enseignement {index}.", "Signal_in_the_data": f"Signal {index}."}
+    {
+        "Insight": f"Enseignement {index}.",
+        "Signal_in_the_data": f"Signal {index}.",
+        "details": f"Détails {index}.",
+    }
     for index in range(1, 4)
 ]
 
@@ -148,26 +152,20 @@ class RdvWorkflowTests(unittest.TestCase):
         self.assertNotIn("warning", events[-2])
         self.assertEqual(events[-1], {"status": "done"})
 
-    def test_csv_calculated_fallback_when_agent_returns_no_topics(self):
+    def test_agent_returns_no_topics_without_demo_fallback(self):
         with patch("csv_agent.CsvAnalysisAgent") as agent:
             agent.return_value.run.return_value = {"report": {"items": []}}
-            annie = _appointment_topics("annie")
-            marc = _appointment_topics("marc")
-        self.assertEqual(len(annie), 1)
-        self.assertIn("3 000,00 €", annie[0]["Signal_in_the_data"])
-        self.assertIn("6 virements", annie[0]["Signal_in_the_data"])
-        self.assertEqual(len(marc), 1)
-        self.assertIn("5 395,00 €", marc[0]["Signal_in_the_data"])
-        self.assertIn("3 opérations", marc[0]["Signal_in_the_data"])
+            self.assertEqual(_appointment_topics("annie"), [])
+            self.assertEqual(_appointment_topics("marc"), [])
 
-    def test_invalid_generated_aggregation_finishes_with_csv_topics(self):
+    def test_invalid_generated_aggregation_reports_error(self):
         failure = RuntimeError(
             "CSV analysis failed after one generation: "
             "Invalid or missing aggregation.csv: Aggregation CSV has no results"
         )
         with (
             patch("csv_agent.CsvAnalysisAgent") as agent,
-            self.assertLogs(app.logger.name, level="WARNING") as logs,
+            self.assertLogs(app.logger.name, level="ERROR") as logs,
         ):
             agent.return_value.run.side_effect = failure
             response = app.test_client().post("/api/rdv/workflow?customer=annie")
@@ -176,11 +174,9 @@ class RdvWorkflowTests(unittest.TestCase):
                 for line in response.get_data(as_text=True).splitlines()
                 if line.startswith("data: ")
             ]
-        self.assertEqual(events[-2]["step"], "brief")
-        self.assertEqual(events[-2]["status"], "complete")
-        self.assertIn("6 virements", events[-2]["topics"][0]["Signal_in_the_data"])
-        self.assertEqual(events[-1], {"status": "done"})
-        self.assertTrue(any("fallback" in line.lower() for line in logs.output))
+        self.assertEqual(events[-1]["status"], "error")
+        self.assertNotIn("topics", events[-1])
+        self.assertTrue(any("RDV workflow failed" in line for line in logs.output))
 
     def test_no_complete_topics_still_finishes_with_warning(self):
         with (

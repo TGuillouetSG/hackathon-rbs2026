@@ -1,101 +1,21 @@
 """Synthetic customer catalog and profile-backed display facts for the demo."""
 
 import json
-import re
-import sys
 from datetime import date
-from decimal import Decimal
-from functools import lru_cache
 from pathlib import Path
-
-STARTER_DIR = Path(__file__).resolve().parents[1]
-if str(STARTER_DIR) not in sys.path:
-    sys.path.insert(0, str(STARTER_DIR))
-from utils import read_csv_rows
-
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 DEFAULT_CUSTOMER_ID = "annie"
 
 
-@lru_cache(maxsize=1)
-def customers():
-    records = json.loads((DATA_DIR / "customers.json").read_text(encoding="utf-8"))
-    ids = [record["id"] for record in records]
-    if len(ids) != len(set(ids)) or DEFAULT_CUSTOMER_ID not in ids:
-        raise ValueError("Invalid demo customer catalog")
-    for record in records:
-        csv_path = (DATA_DIR / record["csv"]).resolve()
-        if csv_path.parent != DATA_DIR.resolve() or not csv_path.is_file():
-            raise ValueError(f"Invalid CSV for demo customer {record['id']}")
-    return {record["id"]: record for record in records}
-
-
-def customer_by_id(customer_id):
-    return customers().get(customer_id)
+CUSTOMERS = {
+    record["id"]: record
+    for record in json.loads((DATA_DIR / "customers.json").read_text(encoding="utf-8"))
+}
 
 
 def customer_csv(customer):
     return DATA_DIR / customer["csv"]
-
-
-def verified_demo_topics(customer):
-    """Small, quantified fallback when the model returns no complete topic."""
-    rows = read_csv_rows(customer_csv(customer))
-
-    external_by_recipient = {}
-    property_operations = []
-    for raw_row in rows:
-        # Bank exports may pad the final column name (for example "evenement ").
-        row = {
-            name.strip(): value for name, value in raw_row.items() if name is not None
-        }
-        category = row.get("categorie", "")
-        label = row.get("libelle", row.get("Libellé", ""))
-        detail = row.get("Détail de l'écriture", "")
-        event = row.get("evenement", "")
-        amount = row.get("montant_eur", row.get("Montant de l'opération", "0"))
-        if (
-            category == "Virement externe" and "Banque" in label
-        ) or event.strip().lower() == "virement banque externe":
-            # Prefer the transaction detail because bank-export labels are often generic.
-            recipient = detail or label
-            bank_match = re.search(r"POUR:\s*(.*?)\s+\d{2}\s+\d{2}\s+BQ\b", recipient)
-            if bank_match:
-                recipient = bank_match.group(1).strip()
-            external_by_recipient.setdefault(recipient, []).append({"montant": amount})
-        if category == "Frais projet immobilier":
-            property_operations.append(row)
-
-    topics = []
-    for recipient, transfers in external_by_recipient.items():
-        if len(transfers) < 3:
-            continue
-        total = sum((-Decimal(row["montant"]) for row in transfers), Decimal(0))
-        topics.append(
-            {
-                "Insight": "Des virements réguliers vers une autre banque justifient de vérifier une éventuelle multi-bancarité.",
-                "Signal_in_the_data": (
-                    f"{len(transfers)} virements vers {recipient} totalisent {_euros(total)} "
-                    "sur la période observée ; cela ne confirme pas à lui seul une autre relation bancaire."
-                ),
-            }
-        )
-
-    if property_operations:
-        total = sum(
-            (-Decimal(row["montant_eur"]) for row in property_operations), Decimal(0)
-        )
-        topics.append(
-            {
-                "Insight": "Un éventuel projet immobilier mérite d'être exploré avec le client.",
-                "Signal_in_the_data": (
-                    f"{len(property_operations)} opérations classées comme frais de projet immobilier "
-                    f"totalisent {_euros(total)} de débits ; le projet reste à confirmer."
-                ),
-            }
-        )
-    return topics[:3]
 
 
 def _date(value):

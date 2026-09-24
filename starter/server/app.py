@@ -14,21 +14,17 @@ from pydantic import ValidationError
 
 if __package__:
     from .profiles import (
+        CUSTOMERS,
         DEFAULT_CUSTOMER_ID,
-        customer_by_id,
         customer_csv,
-        customers,
         profile_view,
-        verified_demo_topics,
     )
 else:
     from profiles import (
+        CUSTOMERS,
         DEFAULT_CUSTOMER_ID,
-        customer_by_id,
         customer_csv,
-        customers,
         profile_view,
-        verified_demo_topics,
     )
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
@@ -57,7 +53,7 @@ def index():
         "index.html",
         customer=customer,
         view=profile_view(customer),
-        customers=customers().values(),
+        customers=CUSTOMERS.values(),
     )
 
 
@@ -68,12 +64,12 @@ def rdv():
         "rdv.html",
         customer=customer,
         view=profile_view(customer),
-        customers=customers().values(),
+        customers=CUSTOMERS.values(),
     )
 
 
 def _selected_customer():
-    customer = customer_by_id(request.args.get("customer", DEFAULT_CUSTOMER_ID))
+    customer = CUSTOMERS.get(request.args.get("customer", DEFAULT_CUSTOMER_ID))
     if customer is None:
         abort(404)
     return customer
@@ -86,31 +82,18 @@ def _appointment_topics(customer_id=DEFAULT_CUSTOMER_ID, on_step=None):
     from csv_agent import CsvAnalysisAgent
     from csv_tools import SummaryItem
 
-    customer = customer_by_id(customer_id)
+    customer = CUSTOMERS.get(customer_id)
     if customer is None:
         raise ValueError("Client inconnu.")
     csv_path = customer_csv(customer)
 
     agent_rdv = CsvAnalysisAgent()
-    try:
-        report = agent_rdv.run(
-            csv_path,
-            RDV_OBJECTIVE,
-            STARTER_DIR / "output" / "rdv" / customer_id,
-            on_step=on_step,
-        )["report"]
-    except RuntimeError as exc:
-        if not str(exc).startswith("CSV analysis failed after one generation:"):
-            raise
-        topics = verified_demo_topics(customer)
-        app.logger.warning(
-            "Using CSV-calculated demo topic fallback after generated analysis "
-            "failure (customer_id=%s, topic_count=%d): %s",
-            customer_id,
-            len(topics),
-            exc,
-        )
-        return topics
+    report = agent_rdv.run(
+        csv_path,
+        RDV_OBJECTIVE,
+        STARTER_DIR / "output" / "rdv" / customer_id,
+        on_step=on_step,
+    )["report"]
     items = report.get("items") or []
     topics = []
     for item in items:
@@ -121,15 +104,6 @@ def _appointment_topics(customer_id=DEFAULT_CUSTOMER_ID, on_step=None):
         topics.append(topic.model_dump())
         if len(topics) == 3:
             break
-    if not topics:
-        topics = verified_demo_topics(customer)
-        if topics:
-            app.logger.info(
-                "Using CSV-calculated demo topic fallback (customer_id=%s, "
-                "topic_count=%d)",
-                customer_id,
-                len(topics),
-            )
     app.logger.info(
         "LangGraph agent returned to RDV API (raw_item_count=%d, "
         "complete_topic_count=%d)",
@@ -167,7 +141,7 @@ def rdv_workflow():
             last_message = [
                 "On rassemble les pièces du puzzle...",
                 "Ils auraient pu optimiser leur démo quand même...",
-                "Le futur ? c'est vous ! 😉😉",
+                "C'est vous l'avenir !",
                 "Encore un instant : On cherche du budget pour finir.",
                 "Ca va vous ? Je bosse hein !",
                 "On va se faire un café ?",

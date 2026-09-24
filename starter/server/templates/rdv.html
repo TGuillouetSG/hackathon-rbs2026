@@ -177,6 +177,11 @@
           const signal = document.createElement('p');
           signal.textContent = item.Signal_in_the_data;
           details.append(summary, signal);
+          if (item.details) {
+            const explanation = document.createElement('p');
+            explanation.textContent = item.details;
+            details.append(explanation);
+          }
           topic.append(heading, details);
           topicsList.append(topic);
           const agendaItem = document.createElement('li');

@@ -36,7 +36,7 @@ class SummaryItem(BaseModel):
     Signal_in_the_data: str
     details: str
 
-    @field_validator("Insight", "Signal_in_the_data")
+    @field_validator("Insight", "Signal_in_the_data", "details")
     @classmethod
     def require_text(cls, value: str) -> str:
         if not value.strip():
