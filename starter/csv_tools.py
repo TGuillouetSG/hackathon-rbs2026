@@ -31,6 +31,7 @@ class SummaryItem(BaseModel):
     # Question: str
     Insight: str
     Signal_in_the_data: str
+    details: str
 
 
 class SummaryOutput(BaseModel):
@@ -126,7 +127,7 @@ class CsvTools:
         """Profile column types and missing counts locally without sending CSV rows."""
         logger.info("Profiling CSV: %s", self.csv_path)
         with self.csv_path.open("r", encoding="utf-8-sig", newline="") as handle:
-            reader = csv.reader(handle)
+            reader = csv.reader(handle, delimiter=";")
             names = next(reader, [])
             if not names or any(not name for name in names) or len(names) != len(set(names)):
                 raise ValueError("CSV must have nonempty, unique column names")
