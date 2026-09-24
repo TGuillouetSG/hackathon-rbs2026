@@ -10,7 +10,7 @@ from server.app import STARTER_DIR, _appointment_report, app
 TOPICS = [
     {
         "Insight": f"Enseignement {index}.",
-        "Signal_in_the_data": f"Signal {index}.",
+        "signal_in_the_data": f"Signal {index}.",
         "details": f"Détails {index}.",
     }
     for index in range(1, 4)
@@ -106,7 +106,7 @@ class RdvWorkflowTests(unittest.TestCase):
                 "selected_aggregates": {"count": "3"},
                 "items": TOPICS + [{
                     "Insight": "Extra",
-                    "Signal_in_the_data": "Signal extra.",
+                    "signal_in_the_data": "Signal extra.",
                     "details": "Détails extra.",
                 }],
             }

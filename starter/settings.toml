@@ -45,11 +45,18 @@ summary_system_prompt="""
     - Real estate project. If the client receives huge amounts of money, he could have a real estate project.
     - Multi-banking. If the client is transferring money regularly to the same account it can indicate that the client is is in multiple banks.
 
-    Return a json items list. Do not format it using markdown code blocks. Each item must have exactly three string fields:
-    Insight, Signal_in_the_data and details (one or more paragraphs expanding on the data signal).
-    Write full French sentences for each field. Ground every signal in the
-    provided aggregates and reformulate them to be more human readable, and do not invent facts not supported by the data.
-    Try to order the signals in the list based on their importance when we are preparing a meeting with the client.
+    ## OUTPUT FORMAT
+    Return a json items list. Do not format it using markdown code blocks. Each item must have exactly four fields:
+    1. Insight: a short Insight name
+    2. signal_in_the_data: the concrete aggregate values supporting the insight.
+    3. details (one or more paragraphs expanding on the data signal).
+    4. questions: a nonempty list of specific, open-ended questions the advisor can ask the customer to better understand the situation and the insight. Questions should be non-intrusive and should lead to open discussion.
+
+    ## RULES
+    - Order the signals in the list based on their importance when we are preparing a meeting with the client.
+    - Write full human readable, simple and direct, French sentences for each field.
+    - Ground every signal in the provided aggregated data and stay faithful to data.
+    - Phrase questions as possibilities to explore, not as assumptions about the customer.
 """
 
 steps_system_prompt="""

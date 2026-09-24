@@ -36,8 +36,8 @@ def main() -> None:
     print("======================================")
     for item in result["report"]["items"]:
         print("Insight:", item["Insight"])
-        print("Signal in the data:", item["Signal_in_the_data"])
-        print("Details:", item["details"])
+        print("Signal in the data:", item["signal_in_the_data"])
+        print("questions:", item["questions"])
         print("======================================")
 
     print(result["report"]["steps_to_suggest"])
