@@ -7,14 +7,13 @@
             "request": "launch",
             "module": "flask",
             "env": {
-                "FLASK_APP": "app.py", // Replace with your main Flask file
-                "FLASK_ENV": "development",
+                "FLASK_APP": "app.py",
                 "FLASK_DEBUG": "1"
             },
             "args": [
                 "run",
-                "--no-debugger", // Optional: Prevent conflicts with Werkzeug debugger
-                "--no-reload" // Optional: Disable auto-reload for debugging
+                "--no-debugger",
+                "--no-reload"
             ],
             "cwd": "${workspaceFolder}/starter/server",
             "jinja": true,

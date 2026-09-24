@@ -1,67 +1,79 @@
 # Foundry CSV analysis starter
 
-`main.py` runs a fixed LangGraph workflow: `START -> aggregation -> summary -> END`.
-There are two independently callable tools:
+`CsvAnalysisAgent.run(csv_path, objective, output_dir)` uses a single-pass LangGraph workflow:
 
-- `aggregate(csv_path, objective, run_dir)` profiles the CSV, generates `analysis.py`,
-  executes it in Foundry Code Interpreter, and saves a validated `aggregation.csv`.
-- `summarize(aggregation_path, objective)` reads the saved aggregates and uses its
-  dedicated `SUMMARY_PROMPT` to write `report.json` with summary, questions, and insights.
+```text
+START → write_python_code(prompt) → execute_python_code(code_id)
+                                   ↳ success → summarize → END
+                                   ↳ error → fail with diagnostics
+```
 
-`csv_agent.py` contains only graph wiring and the public `run()` entry point.
-`csv_tools.py` contains the tools, prompts, and artifact validation. The graph always
-aggregates before summarizing; no supervisor or model-selected tool routing is needed.
+The write tool makes a dedicated Azure OpenAI Foundry Responses call, validates the
+returned Python, and saves it under `programs/<code_id>.py`. It returns `code_id`,
+`code`, and `script_path`. The execute tool runs that saved file with the local
+Python interpreter. It returns the exit code, stdout, stderr, and files generated
+in that execution's artifact directory. The script reads `CSV_INPUT_PATH` and
+writes `AGGREGATION_OUTPUT_PATH`. A run succeeds only after the resulting
+`aggregation.csv` passes validation; the summary model then sees only aggregate
+names and numeric values. The summary call uses Pydantic structured output and saves
+an `items` list. Each item has string `Insight` and `Signal_in_the_data` fields.
+
+Each run saves `profile.json`, all generated programs, execution artifacts,
+`aggregation.csv`, and `report.json` in a unique output directory. Failed runs
+do not create a report. Execution has a 60 second timeout. Code generation is
+limited to one request, a 30 second request timeout, and 2500 output tokens;
+SDK retries are disabled. A slow or invalid response fails the run. Generated code runs on the current computer with the
+current user's filesystem access, so use this workflow only with a trusted
+Foundry deployment and suitable local environment.
+The generation request uses low reasoning effort to reduce first-run latency;
+the selected code deployment must support that setting.
+
+Every run makes a fresh code-generation request. Results include
+`generation_seconds` so first-run and repeated-run latency can be measured.
+Set `AZURE_OPENAI_CODE_DEPLOYMENT_NAME` to a faster code-capable deployment to
+speed up code generation; the summary still uses `AZURE_OPENAI_DEPLOYMENT_NAME`.
 
 ## Setup
 
-Use Python 3.10 or later and install the locked dependencies with `uv sync` from this
-directory. Copy `.env.example` to `.env` and set:
+From `starter`, install the dependencies in `pyproject.toml` and set these in
+`.env`:
 
 ```env
 AZURE_OPENAI_API_KEY=your-api-key
 AZURE_OPENAI_ENDPOINT=https://your-account.openai.azure.com
 AZURE_OPENAI_DEPLOYMENT_NAME=your-model-deployment
+AZURE_OPENAI_CODE_DEPLOYMENT_NAME=optional-faster-code-deployment
 ```
 
-The app authenticates with the API key through `FoundryClient`. No `az login` or
-Foundry project endpoint is required. Use a deployment and region that support
-Code Interpreter in the Azure OpenAI Responses API. These same settings also
-serve the arithmetic and Flask examples.
-
-## Run
+Run:
 
 ```bash
+uv run main.py path/to/data.csv "Compare monthly revenue"
 uv run tiny_ex.py
-
-# Or analyze your own CSV:
-uv run main.py path/to/data.csv "Compare the most relevant monthly metrics"
-```
-
-`tiny_ex.py` creates six synthetic sales rows in a temporary CSV, runs the complete
-agent, and prints the saved artifact paths and report. It still needs a configured
-Azure OpenAI endpoint, API key, and model deployment; it does not use mock responses.
-
-Use `--output-dir path/to/results` to change where runs are saved. Each run creates
-its own directory with `profile.json`, `analysis.py`, `aggregation.csv`, and
-`report.json`. The CLI prints these absolute paths and the report as JSON. CSV inputs
-are limited to 10 MiB.
-
-Edit `AGGREGATION_PROMPT` and `SUMMARY_PROMPT` in `csv_tools.py` independently.
-Code generation receives only schema/profile information. The summary receives all
-validated aggregates and the objective, with no raw CSV attachment or execution tools.
-The interpreter's own model context can still see any raw values printed by generated code.
-
-Each successful run uses four model requests: profile, generate code, execute, summarize.
-Aggregation allows two repair attempts. Uploaded files are cleaned up on success or
-failure; model requests use `store=False` and do not maintain response conversations.
-The summary never runs after a failed aggregation. `final_answer` remains in the report
-for compatibility and contains the dedicated summary directly.
-
-The implementation uses [LangGraph StateGraph](https://reference.langchain.com/python/langgraph/graph/state/StateGraph)
-and [Azure OpenAI Responses with Code Interpreter](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses).
-
-Run local contract tests (no Azure requests):
-
-```bash
 uv run python -m unittest -v test_csv_agent
 ```
+
+## Appointment page
+
+The demo has two synthetic customers configured in `data/customers.json`:
+Annie (`annie`, the default) and Marc (`marc`). Use the visible switcher on `/`,
+or open `/?customer=marc` and `/rdv?customer=marc` directly. Unknown customer IDs
+return 404. Both pages and the RDV workflow use the same selected customer.
+
+Annie's missing-contact scenario uses `data/demo_account_operations.csv`; Marc's
+possible property-purchase scenario uses `data/marc_account_operations.csv`.
+The page at `/rdv` automatically calls `CsvAnalysisAgent.run` through
+`POST /api/rdv/workflow?customer=<id>` and displays up to three structured report
+items as subjects to explore. Each card shows the insight and its data signal.
+The profile-based brief remains visible if analysis fails. Agent artifacts are
+saved under `starter/output/rdv/<id>/` in unique per-run subdirectories.
+When a successful agent run returns no complete topic, the demo calculates a
+limited, quantified topic directly from repeated external transfers or explicit
+property-project costs in the selected CSV.
+
+Start the Flask app from `starter` with `uv run flask --app server.app run`.
+Starting from `starter/server` with `python -m flask --app app run` also works.
+The Azure Foundry settings listed above are required for the CSV analysis.
+
+The tests use a fake Foundry response and execute generated Python locally.
+They do not make Azure requests.

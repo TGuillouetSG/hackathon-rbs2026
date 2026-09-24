@@ -1,11 +1,8 @@
 from pathlib import Path
+import csv
+import io
 
 MAX_CSV_BYTES = 10 * 1024 * 1024
-MAX_CODE_BYTES = 32 * 1024
-MAX_AGGREGATION_BYTES = 1024 * 1024
-MAX_AGGREGATES = 1000
-MAX_REPAIRS = 2
-MAX_TOOL_CALLS = 8
 
 def import_csv(csv_path:Path):
     source = Path(csv_path).resolve()
@@ -14,3 +11,18 @@ def import_csv(csv_path:Path):
     if source.stat().st_size > MAX_CSV_BYTES:
         raise ValueError("Input CSV exceeds 10 MiB")
     return source
+
+
+def read_csv_rows(csv_path: Path):
+    """Read common exported CSV encodings and delimiters (including French bank exports)."""
+    raw = Path(csv_path).read_bytes()
+    try:
+        content = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        content = raw.decode("cp1252")
+    sample = content[:8192]
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=",;\t|")
+    except csv.Error:
+        dialect = csv.excel
+    return list(csv.DictReader(io.StringIO(content, newline=""), dialect=dialect))

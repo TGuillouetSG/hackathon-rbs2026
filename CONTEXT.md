@@ -31,3 +31,9 @@ The rules that govern the choice of metrics of interest for a source dataset.
 
 **Dataset profile**:
 The source dataset's column names, inferred types, and data-quality counts, without raw records.
+
+**Customer profile**:
+The facts about one demo customer that support the customer summary and appointment preparation. Distinct from a dataset profile, which describes a CSV's structure and quality.
+
+**Appointment brief**:
+The facts, points of attention, suggested actions, and data-supported topics prepared for a meeting with one customer.
