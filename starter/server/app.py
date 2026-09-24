@@ -4,7 +4,7 @@ import sys
 import json
 from pathlib import Path
 
-from flask import Flask, Response, jsonify, render_template
+from flask import Flask, Response, render_template
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
@@ -20,29 +20,14 @@ def rdv():
 @app.post("/api/rdv/workflow")
 def rdv_workflow():
     """Prepare the appointment brief and report progress after each step."""
-    steps = [
-        {"id": "client", "label": "Récupération des informations client"},
-        {"id": "context", "label": "Analyse du contexte et des points d’attention"},
-        {"id": "brief", "label": "Préparation de la synthèse du rendez-vous"},
-    ]
+    steps = ("client", "context", "brief")
     def event_stream():
         try:
             for step in steps:
-                yield f"data: {json.dumps({'step': step['id'], 'status': 'running'}, ensure_ascii=False)}\n\n"
-                if step["id"] == "client":
-                    # Demo profile shown in the app; replace with a data source when available.
-                    client = {
-                        "name": "Mme Annie BERTOUD",
-                        "id": "BAB7595",
-                        "agency": "Test Rabelais (0451)",
-                        "advisor": "Nicolas ZAOUI",
-                        "alerts": ["Coordonnées à mettre à jour", "Risque pli non distribué"],
-                    }
-                elif step["id"] == "context":
-                    context = client["alerts"]
-                else:
+                yield f"data: {json.dumps({'step': step, 'status': 'running'}, ensure_ascii=False)}\n\n"
+                if step == "brief":
                     # Use Foundry when configured; local demos get a useful fallback.
-                    starter_dir = Path(__file__).resolve().parents[2]
+                    starter_dir = Path(__file__).resolve().parents[1]
                     if str(starter_dir) not in sys.path:
                         sys.path.insert(0, str(starter_dir))
                     try:
@@ -61,8 +46,8 @@ def rdv_workflow():
                             "Vérifier les coordonnées et le risque de pli non distribué, "
                             "compléter la situation professionnelle et recueillir les besoins de la cliente."
                         )
-                payload = {"step": step["id"], "status": "complete"}
-                if step["id"] == "brief":
+                payload = {"step": step, "status": "complete"}
+                if step == "brief":
                     payload["result"] = synthesis
                 yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
             yield "data: {\"status\": \"done\"}\n\n"
@@ -71,8 +56,3 @@ def rdv_workflow():
             yield f"data: {json.dumps({'status': 'error', 'message': 'La préparation du rendez-vous a échoué. Réessayez.'}, ensure_ascii=False)}\n\n"
 
     return Response(event_stream(), mimetype="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
-
-@app.route("/test")
-def test_get():
-    print("Hello World !")
-    return "test"

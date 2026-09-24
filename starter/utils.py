@@ -1,11 +1,6 @@
 from pathlib import Path
 
 MAX_CSV_BYTES = 10 * 1024 * 1024
-MAX_CODE_BYTES = 32 * 1024
-MAX_AGGREGATION_BYTES = 1024 * 1024
-MAX_AGGREGATES = 1000
-MAX_REPAIRS = 2
-MAX_TOOL_CALLS = 8
 
 def import_csv(csv_path:Path):
     source = Path(csv_path).resolve()

@@ -195,7 +195,6 @@ Create `.env` in your application root:
 AZURE_OPENAI_ENDPOINT=https://foundry-rbs2026-panthers.openai.azure.com/
 AZURE_OPENAI_API_KEY=<your-key>
 AZURE_OPENAI_DEPLOYMENT_NAME=chat
-AZURE_OPENAI_API_VERSION=2025-04-01-preview
 
 # Optional (if using Storage)
 AZURE_STORAGE_ACCOUNT=st<teamname><hash>
