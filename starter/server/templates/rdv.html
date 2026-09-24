@@ -151,7 +151,8 @@
         revealBrief(false);
       }
 
-      function showTopics(topics) {
+      function showReport(report) {
+        const topics = report.items;
         topicsList.replaceChildren();
         agendaList.replaceChildren();
         const intro = document.createElement('li');
@@ -200,11 +201,11 @@
           const current = document.querySelector(`[data-step="${data.step}"] strong`);
           showStatus(data.message || (current ? current.textContent + '…' : 'Préparation en cours…'));
         }
-        if (data.step === 'brief' && data.status === 'complete' && Array.isArray(data.topics)) {
-          showTopics(data.topics);
+        if (data.step === 'brief' && data.status === 'complete' && data.report && Array.isArray(data.report.items)) {
+          showReport(data.report);
           topicsWarning.textContent = data.warning || '';
           topicsWarning.hidden = !data.warning;
-          topicsSource.textContent = data.topics.length
+          topicsSource.textContent = data.report.items.length
             ? 'Les sujets affichés proviennent de l’analyse des opérations du client sélectionné.'
             : 'Aucun sujet issu de l’analyse CSV n’est affiché.';
           revealBrief(true);

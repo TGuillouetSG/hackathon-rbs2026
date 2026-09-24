@@ -35,7 +35,7 @@
     "last_appointment": null,
     "recent_calls": 0,
     "reports": 0,
-    "csv": "demo_account_operations.csv"
+    "csv": "inputs/client-002.csv"
   },
   {
     "id": "marc",
@@ -74,6 +74,6 @@
     "recent_calls": 1,
     "reports": 1,
     "property_signal": "Deux virements vers une étude notariale en août et septembre 2026 ; projet immobilier à confirmer.",
-    "csv": "marc_account_operations.csv"
+    "csv": "data/marc_account_operations.csv"
   }
 ]
