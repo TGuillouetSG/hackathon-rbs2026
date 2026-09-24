@@ -515,6 +515,7 @@ dependencies = [
     { name = "langchain-core" },
     { name = "langgraph" },
     { name = "openai" },
+    { name = "pydantic" },
     { name = "python-dotenv" },
 ]
 
@@ -527,6 +528,7 @@ requires-dist = [
     { name = "langchain-core", specifier = ">=1.0,<2" },
     { name = "langgraph", specifier = ">=1.0,<2" },
     { name = "openai", specifier = ">=3.0.0" },
+    { name = "pydantic", specifier = ">=2,<3" },
     { name = "python-dotenv", specifier = "==1.0.0" },
 ]
 

@@ -39,11 +39,10 @@ def main() -> None:
     print("Aggregation:", result["aggregation_path"])
     print("Generated Python:", result["script_path"])
     print("Report:", result["report_path"])
-    print("Summary:", result["report"]["summary"])
-    for insight in result["report"]["insights"]:
-        print("Insight:", insight)
-    for question in result["report"]["questions"]:
-        print("Question:", question)
+    for item in result["report"]["items"]:
+        print("Question:", item["Question"])
+        print("Insight:", item["Insight"])
+        print("Signal in the data:", item["Signal_in_the_data"])
 
 
 if __name__ == "__main__":
