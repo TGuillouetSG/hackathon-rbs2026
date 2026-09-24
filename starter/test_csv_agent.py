@@ -1,6 +1,6 @@
 """Offline tests for single-pass local code generation."""
 
-import csv
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,10 +8,9 @@ from types import SimpleNamespace
 
 from pydantic import ValidationError
 
-from csv_agent import CsvAnalysisAgent
 from config import settings
-from csv_tools import SummaryItem, SummaryOutput, CsvTools, read_aggregates
-
+from csv_agent import CsvAnalysisAgent
+from csv_tools import CsvTools, SummaryItem, SummaryOutput, read_aggregates
 
 GOOD_CODE = """import csv
 import os
@@ -46,8 +45,9 @@ class FakeResponses:
                     "items": [
                         {
                             "Insight": "Le revenu total est 5.",
-                            "Signal_in_the_data": "total_revenue vaut 5.",
+                            "signal_in_the_data": "total_revenue vaut 5.",
                             "details": "Le total calculé est de 5.",
+                            "questions": ["Comment expliquez-vous ce montant ?"],
                         }
                     ]
                 }
@@ -58,24 +58,27 @@ class FakeResponses:
 class CsvAgentTests(unittest.TestCase):
     def test_summary_item_has_the_api_topic_fields(self):
         self.assertEqual(
-            set(SummaryItem.model_fields), {"Insight", "Signal_in_the_data", "details"}
+            set(SummaryItem.model_fields), {"Insight", "signal_in_the_data", "details", "questions"}
         )
         item = SummaryItem.model_validate(
             {
                 "Insight": "Le revenu total est 5.",
-                "Signal_in_the_data": "total_revenue vaut 5.",
+                "signal_in_the_data": "total_revenue vaut 5.",
                 "details": "Le total calculé est de 5.",
+                "questions": [" Comment expliquez-vous ce montant ? "],
             }
         )
         self.assertEqual(
-            set(item.model_dump()), {"Insight", "Signal_in_the_data", "details"}
+            set(item.model_dump()), {"Insight", "signal_in_the_data", "details", "questions"}
         )
+        self.assertEqual(item.questions, ["Comment expliquez-vous ce montant ?"])
         with self.assertRaises(ValidationError):
             SummaryItem.model_validate(
                 {
                     "Insight": " ",
-                    "Signal_in_the_data": "Un chiffre.",
+                    "signal_in_the_data": "Un chiffre.",
                     "details": "Un détail.",
+                    "questions": ["Pourquoi ?"],
                 }
             )
         with self.assertRaises(ValidationError):
@@ -83,10 +86,21 @@ class CsvAgentTests(unittest.TestCase):
                 {
                     "Question": "Pourquoi ?",
                     "Insight": "Un constat.",
-                    "Signal_in_the_data": "Un chiffre.",
+                    "signal_in_the_data": "Un chiffre.",
                     "details": "Un détail.",
+                    "questions": ["Pourquoi ?"],
                 }
             )
+        for questions in ([], [" "]):
+            with self.subTest(questions=questions), self.assertRaises(ValidationError):
+                SummaryItem.model_validate(
+                    {
+                        "Insight": "Un constat.",
+                        "signal_in_the_data": "Un chiffre.",
+                        "details": "Un détail.",
+                        "questions": questions,
+                    }
+                )
 
     def make_run(self, root, programs):
         source = root / "input.csv"
@@ -133,8 +147,14 @@ class CsvAgentTests(unittest.TestCase):
             )
             self.assertEqual(
                 set(result["report"]["items"][0]),
-                {"Insight", "Signal_in_the_data", "details"},
+                {"Insight", "signal_in_the_data", "details", "questions"},
             )
+            self.assertEqual(
+                result["report"]["items"][0]["questions"],
+                ["Comment expliquez-vous ce montant ?"],
+            )
+            saved_report = json.loads(Path(result["report_path"]).read_text(encoding="utf-8"))
+            self.assertEqual(saved_report, result["report"])
             self.assertGreaterEqual(result["generation_seconds"], 0)
             self.assertEqual(len(responses.calls), 2)
             self.assertTrue(all(call["store"] is False for call in responses.calls))

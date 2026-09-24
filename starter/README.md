@@ -16,8 +16,8 @@ in that execution's artifact directory. The script reads `CSV_INPUT_PATH` and
 writes `AGGREGATION_OUTPUT_PATH`. A run succeeds only after the resulting
 `aggregation.csv` passes validation; the summary model then sees only aggregate
 names and numeric values. The summary call uses Pydantic structured output and saves
-an `items` list. Each item has string `Insight`, `Signal_in_the_data`, and
-`details` fields.
+an `items` list. Each item has string `Insight`, `signal_in_the_data`, and
+`details` fields, plus a nonempty `questions` list for the advisor.
 
 Each run saves `profile.json`, all generated programs, execution artifacts,
 `aggregation.csv`, and `report.json` in a unique output directory. Failed runs
@@ -66,8 +66,8 @@ Annie's missing-contact scenario uses `inputs/client-002.csv`, the same file as
 `data/marc_account_operations.csv`.
 The page at `/rdv` automatically calls `CsvAnalysisAgent.run` through
 `POST /api/rdv/workflow?customer=<id>` with the same objective as `tiny_ex.py`
-and displays its full structured report. Each card shows an insight and its data
-signal.
+and displays its full structured report. Each card shows an insight, its data
+signal, and suggested questions. The meeting outline includes those questions.
 The profile-based brief remains visible if analysis fails. Agent artifacts are
 saved under `starter/output/rdv/<id>/` in unique per-run subdirectories.
 When the agent returns no complete topic, the page displays an empty-state

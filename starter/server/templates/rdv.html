@@ -62,16 +62,12 @@
       </main>
     </div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
   <script>
     (() => {
-      const steps = document.querySelectorAll('.workflow-step');
       const panel = document.getElementById('workflow-panel');
       const stepper = document.getElementById('workflow-steps');
       const status = document.getElementById('workflow-status');
       const result = document.getElementById('workflow-result');
-      const title = document.getElementById('workflow-title');
-      const mark = document.getElementById('workflow-mark');
       const ready = document.getElementById('workflow-ready');
       const topicsList = document.getElementById('topics-list');
       const topicsWarning = document.getElementById('topics-warning');
@@ -80,13 +76,10 @@
       const error = document.getElementById('workflow-error');
       const agendaButton = document.getElementById('agenda-button');
       const agendaPanel = document.getElementById('agenda-panel');
-      let buffer = '';
-      let finished = false;
 
       function revealBrief(complete) {
-        if (finished) return;
-        title.textContent = 'Votre prochain rendez-vous';
-        mark.hidden = true;
+        document.getElementById('workflow-title').textContent = 'Votre prochain rendez-vous';
+        document.getElementById('workflow-mark').hidden = true;
         ready.textContent = complete ? 'Prêt à consulter' : 'Préparation partielle';
         ready.hidden = false;
         stepper.hidden = true;
@@ -94,27 +87,6 @@
         panel.classList.remove('is-preparing');
         panel.setAttribute('aria-busy', 'false');
         result.hidden = false;
-        finished = true;
-
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !window.gsap) return;
-        const cards = result.querySelectorAll('.brief-card');
-        const timeline = gsap.timeline();
-        timeline.fromTo(ready, { autoAlpha: 0, scale: 0.92 }, { autoAlpha: 1, scale: 1, duration: 0.32, ease: 'back.out(1.4)' });
-        timeline.fromTo(cards, { autoAlpha: 0, y: 16, scale: 0.985 }, {
-          autoAlpha: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.11,
-          ease: 'back.out(1.25)', clearProps: 'opacity,visibility,transform'
-        }, '-=0.12');
-        timeline.fromTo(result.querySelector('.brief-footer'), { autoAlpha: 0, y: 10 }, {
-          autoAlpha: 1, y: 0, duration: 0.35, ease: 'power2.out', clearProps: 'opacity,visibility,transform'
-        }, '-=0.18');
-      }
-
-      function showStatus(message) {
-        if (status.textContent === message) return;
-        const line = document.createElement('span');
-        line.className = 'workflow-status-line';
-        line.textContent = message;
-        status.replaceChildren(line);
       }
 
       agendaButton.addEventListener('click', () => {
@@ -139,11 +111,10 @@
       }
 
       function showError(message) {
-        if (finished) return;
-        steps.forEach(item => {
+        if (!result.hidden) return;
+        document.querySelectorAll('.workflow-step').forEach(item => {
           if (item.classList.contains('is-running')) updateStep(item.dataset.step, 'error');
         });
-        showStatus('La préparation a rencontré un problème.');
         topicsList.textContent = '';
         topicsSource.textContent = 'Les sujets issus des opérations ne sont pas disponibles.';
         error.textContent = message || 'Une erreur est survenue.';
@@ -151,55 +122,53 @@
         revealBrief(false);
       }
 
+      function element(tag, text, className) {
+        const node = document.createElement(tag);
+        if (text != null) node.textContent = text;
+        if (className) node.className = className;
+        return node;
+      }
+
+      function questionList(questions) {
+        const list = element('ul');
+        questions.forEach(question => list.append(element('li', question)));
+        return list;
+      }
+
       function showReport(report) {
-        const topics = report.items;
         topicsList.replaceChildren();
-        agendaList.replaceChildren();
-        const intro = document.createElement('li');
-        intro.textContent = 'Accueil et confirmation du motif du rendez-vous.';
-        agendaList.append(intro);
-        if (topics.length === 0) {
-          const empty = document.createElement('p');
-          empty.textContent = 'Aucun sujet complet issu du CSV n’est disponible pour ce rendez-vous.';
-          topicsList.append(empty);
+        agendaList.replaceChildren(element('li', 'Accueil et confirmation du motif du rendez-vous.'));
+        if (!report.items.length) {
+          topicsList.append(element('p', 'Aucun sujet complet issu du CSV n’est disponible pour ce rendez-vous.'));
         }
-        topics.forEach((item, index) => {
-          const topic = document.createElement('div');
-          topic.className = 'topic';
-          const heading = document.createElement('div');
-          const dot = document.createElement('span');
-          dot.className = `topic-dot ${['', 'amber', 'green'][index]}`.trim();
-          const title = document.createElement('strong');
-          title.textContent = item.Insight;
-          heading.append(dot, title);
-          const details = document.createElement('details');
-          const summary = document.createElement('summary');
-          summary.textContent = 'Signal dans les données';
-          const signal = document.createElement('p');
-          signal.textContent = item.Signal_in_the_data;
-          details.append(summary, signal);
-          if (item.details) {
-            const explanation = document.createElement('p');
-            explanation.textContent = item.details;
-            details.append(explanation);
+        report.items.forEach((item, index) => {
+          const heading = element('div');
+          heading.append(element('span', null, `topic-dot ${['', 'amber', 'green'][index] || ''}`.trim()), element('strong', item.Insight));
+
+          const details = element('details');
+          details.append(element('summary', 'Signal dans les données'), element('p', item.signal_in_the_data));
+          if (item.details) details.append(element('p', item.details));
+
+          const agendaItem = element('li', item.Insight);
+          if (Array.isArray(item.questions) && item.questions.length) {
+            details.append(element('p', 'Questions à poser'), questionList(item.questions));
+            agendaItem.append(questionList(item.questions));
           }
+
+          const topic = element('div', null, 'topic');
           topic.append(heading, details);
           topicsList.append(topic);
-          const agendaItem = document.createElement('li');
-          agendaItem.textContent = item.Insight;
           agendaList.append(agendaItem);
         });
       }
 
-      function handleEvent(event) {
-        if (!event.data) return;
+      function handleEvent(rawData) {
         let data;
-        try { data = JSON.parse(event.data); } catch { return; }
+        try { data = JSON.parse(rawData); } catch { return; }
         if (data.step && data.status) updateStep(data.step, data.status);
-        if (data.step === 'brief' && data.status === 'complete') status.hidden = true;
         if (data.status === 'running') {
           const current = document.querySelector(`[data-step="${data.step}"] strong`);
-          showStatus(data.message || (current ? current.textContent + '…' : 'Préparation en cours…'));
+          status.textContent = data.message || (current ? current.textContent + '…' : 'Préparation en cours…');
         }
         if (data.step === 'brief' && data.status === 'complete' && data.report && Array.isArray(data.report.items)) {
           showReport(data.report);
@@ -210,10 +179,7 @@
             : 'Aucun sujet issu de l’analyse CSV n’est affiché.';
           revealBrief(true);
         }
-        if (data.status === 'done') status.hidden = true;
-        if (data.status === 'error') {
-          showError(data.message);
-        }
+        if (data.status === 'error') showError(data.message);
       }
 
       async function startWorkflow() {
@@ -222,6 +188,7 @@
           if (!response.ok || !response.body) throw new Error('Impossible de démarrer la préparation. Réessayez.');
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
+          let buffer = '';
           while (true) {
             const { value, done } = await reader.read();
             if (done) break;
@@ -230,15 +197,16 @@
             buffer = events.pop() || '';
             for (const event of events) {
               const dataLine = event.split('\n').find(line => line.startsWith('data:'));
-              if (dataLine) handleEvent({ data: dataLine.slice(5).trim() });
+              if (dataLine) handleEvent(dataLine.slice(5).trim());
             }
           }
+          if (result.hidden) showError('La préparation s’est interrompue. Réessayez.');
         } catch (err) {
           showError(err.message);
         }
       }
 
-      document.addEventListener('DOMContentLoaded', startWorkflow, { once: true });
+      startWorkflow();
     })();
   </script>
 </body>

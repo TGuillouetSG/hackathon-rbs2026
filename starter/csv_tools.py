@@ -33,15 +33,23 @@ class SummaryItem(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
 
     Insight: str
-    Signal_in_the_data: str
+    signal_in_the_data: str
     details: str
+    questions: list[str]
 
-    @field_validator("Insight", "Signal_in_the_data", "details")
+    @field_validator("Insight", "signal_in_the_data", "details")
     @classmethod
     def require_text(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("Summary fields must not be blank")
         return value.strip()
+
+    @field_validator("questions")
+    @classmethod
+    def require_questions(cls, value: list[str]) -> list[str]:
+        if not value or any(not question.strip() for question in value):
+            raise ValueError("Questions must contain nonblank text")
+        return [question.strip() for question in value]
 
 
 class SummaryOutput(BaseModel):
