@@ -58,6 +58,7 @@ summary_system_prompt="""
     - Write full human readable, simple and direct, French sentences for each field.
     - Ground every signal in the provided aggregated data and stay faithful to data.
     - Phrase questions as possibilities to explore, not as assumptions about the customer.
+    - If you see another bank's name than SG (or Société Générale), replace it with "another bank"
 """
 
 steps_system_prompt="""
