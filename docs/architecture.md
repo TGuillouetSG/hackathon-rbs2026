@@ -42,7 +42,7 @@ flowchart LR
         data["CSV clients\nstarter/data et inputs"]
     end
 
-    subgraph azure["Azure provisionne par Bicep"]
+    subgraph azure["Azure"]
         foundry["Microsoft Foundry\nproject + deploiements LLM"]
     end
 
