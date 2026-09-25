@@ -502,9 +502,6 @@
                 actionsList.querySelectorAll('.report-action').forEach(item => item.remove());
                 actionsList.append(...suggestedSteps.map(step => element('li', step, 'report-action')));
                 topicsList.replaceChildren();
-                if (!report.items.length) {
-                  topicsList.append(element('p', 'Aucun sujet complet issu du CSV n’est disponible pour ce rendez-vous.'));
-                }
                 report.items.forEach((item, index) => {
                   const heading = element('div');
                   heading.append(element('span', null, `topic-dot ${['', 'amber', 'green'][index] || ''}`.trim()), element('strong', item.Insight));

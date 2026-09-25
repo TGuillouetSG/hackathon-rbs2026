@@ -201,9 +201,11 @@ def rdv_workflow():
                     yield event({"step": "brief", "status": "running"})
                 result = {"step": "brief", "status": "complete", "report": value}
                 if not value["items"]:
-                    result["warning"] = (
-                        "Aucun sujet étayé n'a été trouvé dans les opérations."
-                    )
+                    msg= "Aucun sujet étayé n'a été trouvé dans les opérations."
+                    if "litige" in customer.motif.lower():
+                       msg="Le motif du rendez-vous n'est pas adapté pour améliorer la relation commerciale."
+
+                    result["warning"] =msg
                     app.logger.warning(
                         "RDV workflow produced no supported topics "
                         "(request_id=%s, topic_count=%d)",
