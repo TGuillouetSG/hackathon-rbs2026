@@ -37,7 +37,7 @@
     "reports": 1,
     "property_signal": "Deux virements vers une étude notariale en août et septembre 2026 ; projet immobilier à confirmer.",
     "csv": "inputs/client-001.csv",
-    "motif": "Restructurer les crédits conso"
+    "motif": "Restructurer les crédits consommations"
   },
   {
     "id": "françoise",
@@ -77,5 +77,44 @@
     "reports": 0,
     "csv": "inputs/client-002.csv",
     "motif": ""
+  },
+  {
+    "id": "nadia",
+    "name": "Mme Nadia BENALI (003)",
+    "grc_id": "DEMO1003",
+    "birth_date": "1982-07-22",
+    "birth_place": "Grenoble, France",
+    "civil_status": "mariée",
+    "segment": "Client particulier",
+    "classification": "Classé",
+    "compliance": "Évaluée",
+    "risk_flag": false,
+    "inactive_flag": false,
+    "phone": "06 00 00 00 03",
+    "email": "nadia.benali@example.com",
+    "address": "24 avenue Jean Jaurès, 38000 Grenoble",
+    "address_needs_update": false,
+    "undelivered_mail_risk": false,
+    "profession": "Professeure des écoles",
+    "tax_country": "France",
+    "branch": "Agence Grenoble Centre (0380)",
+    "adviser": "Sophie LAURENT",
+    "relationship_since": "2016-09-05",
+    "bad_contract": true,
+    "bad_id": "DEMO30003",
+    "security_phone_set": true,
+    "security_pass_validated": true,
+    "auth_criteria_set": 2,
+    "rgpd_collected": true,
+    "demat_applicable": true,
+    "daily_banking_contracts": 1,
+    "savings_contracts": 2,
+    "savings_eur": 23680.00,
+    "powers": {"procurations": 0, "representations": 0},
+    "last_appointment": "2026-04-09",
+    "recent_calls": 1,
+    "reports": 0,
+    "csv": "inputs/client-003.csv",
+    "motif":"Gestion d'un litige lié à une fraude à la carte bancaire avec contestation de frais d'incident"
   }
 ]
