@@ -1,255 +1,559 @@
 <!doctype html>
 <html lang="fr">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Synapse — Préparation du rendez-vous</title>
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='styles.css') }}"
+        />
+    </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Synapse — Préparation du rendez-vous</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-
-<body>
-  <header class="appbar">
-    <a class="brand" href="{{ url_for('index', customer=customer.id) }}"><span class="brand-symbol"></span>SYNAPSE</a>
-    <nav class="topnav" aria-label="Navigation principale"><a href="{{ url_for('index', customer=customer.id) }}">Accueil</a><a href="#">Activité</a><a href="#">Pilotage</a><a href="#">Suivi</a></nav>
-    <label class="search"><span>⌕</span><input type="search" placeholder="Rechercher un tiers, un contrat, une demande de service..."></label>
-    <div class="top-actions"><span title="Aide">ⓘ</span><span class="avatar-top" title="Profil"></span></div>
-  </header>
-  <div class="layout">
-    <aside class="rail" aria-label="Navigation client">
-      <a class="rail-item" href="{{ url_for('index', customer=customer.id) }}"><span class="ico">♙</span><span>Synthèse</span></a>
-      <a class="rail-item" href="#"><span class="ico">▤</span><span>Contrats<br>&amp; Serv.</span></a>
-      <a class="rail-item" href="#"><span class="ico">▣</span><span>Banque<br>au quot.</span></a>
-      <a class="rail-item" href="#"><span class="ico">♧</span><span>Crédits</span></a>
-      <a class="rail-item" href="#"><span class="ico">♧</span><span>Epargne<br>&amp; Titres</span></a>
-      <a class="rail-item" href="#"><span class="ico">♧</span><span>Assu &amp;<br>Prévoy.</span></a>
-    </aside>
-    <div class="workspace">
-      <div class="titlebar"><h1>Préparation du rendez-vous</h1></div>
-      <main class="content rdv-content">
-        <div class="rdv-dashboard">
-          {% set banner_class = 'rdv-client' %}
-          {% set show_back_action = true %}
-          {% include '_client_banner.html' %}
-
-          <section class="panel workflow-panel is-preparing" id="workflow-panel" aria-labelledby="workflow-title" aria-busy="true">
-            <header class="panel-title workflow-heading">
-              <span class="title-icon workflow-mark" id="workflow-mark" aria-hidden="true">✦</span>
-              <h2 id="workflow-title">Préparation du prochain RDV</h2>
-              <span class="brief-ready" id="workflow-ready" hidden>Prêt à consulter</span>
-            </header>
-            <div class="workflow-body">
-              <p class="workflow-progress-label">Préparation en cours <span aria-hidden="true">·</span> 3 étapes</p>
-              <ol class="workflow-steps" id="workflow-steps" aria-label="Étapes de préparation" aria-live="polite">
-                <li class="workflow-step is-pending" data-step="client"><span class="step-icon"><span class="step-spinner"></span></span><span class="step-copy"><strong>Récupération des informations client</strong><small>Profil et données disponibles</small></span></li>
-                <li class="workflow-step is-pending" data-step="context"><span class="step-icon"><span class="step-spinner"></span></span><span class="step-copy"><strong>Analyse du contexte et des points d’attention</strong><small>Alertes et sujets à vérifier</small></span></li>
-                <li class="workflow-step is-pending" data-step="brief"><span class="step-icon"><span class="step-spinner"></span></span><span class="step-copy"><strong>Préparation de la synthèse du rendez-vous</strong><small>Priorités et questions suggérées</small></span></li>
-              </ol>
-              <div class="workflow-status" id="workflow-status" role="status">Démarrage de la préparation…</div>
-              <section class="workflow-result" id="workflow-result" aria-labelledby="workflow-title" hidden>
-                <div class="brief-grid">
-                  <section class="brief-card brief-actions" aria-labelledby="actions-title"><h4 id="actions-title"><span aria-hidden="true">✦</span> Actions suggérées avant le RDV</h4><ul><li>Confirmer le motif et la date du rendez-vous.</li>{% for action in view.actions %}<li>{{ action }}</li>{% endfor %}</ul></section>
-                  <section class="brief-card" aria-labelledby="essentiel-title"><h4 id="essentiel-title"><span aria-hidden="true">◉</span> L’essentiel en 30 secondes</h4><dl class="facts"><div><dt>Relation client</dt><dd>Depuis le {{ view.relationship_date }}</dd></div><div><dt>Épargne et titres</dt><dd>{{ view.savings }} <small>montant affiché, à vérifier</small></dd></div><div><dt>Dernier RDV</dt><dd>{{ view.last_appointment or 'Aucun rendez-vous affiché' }}</dd></div><div><dt>Agence</dt><dd>{{ customer.branch }}</dd></div></dl></section>
-                  <section class="brief-card" aria-labelledby="attention-title"><h4 id="attention-title"><span aria-hidden="true">◈</span> Points d’attention</h4><ul class="attention-list">{% for label, detail in view.alerts %}<li><strong>{{ label }}</strong><span>{{ detail }}</span></li>{% else %}<li><span>Aucun point d’attention signalé.</span></li>{% endfor %}</ul></section>
-                  <section class="brief-card topics-card" aria-labelledby="topics-title"><h4 id="topics-title"><span aria-hidden="true">◎</span> Sujets à explorer</h4><div class="workflow-warning" id="topics-warning" role="status" hidden></div><div class="workflow-error" id="workflow-error" role="alert" hidden></div><div id="topics-list">Analyse en cours…</div></section>
-                </div>
-                <div class="brief-footer"><button type="button" class="agenda-button" id="agenda-button" aria-expanded="false" aria-controls="agenda-panel">✦ Afficher ma trame de RDV</button><p id="topics-source">Les sujets du client sélectionné sont en cours d’analyse.</p></div>
-                <section class="agenda-panel" id="agenda-panel" hidden aria-labelledby="agenda-title"><h4 id="agenda-title">Trame de rendez-vous proposée</h4><ol id="agenda-list"></ol><div id="agenda-questions" hidden><h5>Questions sélectionnées</h5><ul id="agenda-questions-list"></ul></div></section>
-              </section>
+    <body>
+        <header class="appbar">
+            <a class="brand" href="{{ url_for('index', customer=customer.id) }}"
+                ><span class="brand-symbol"></span>SYNAPSE</a
+            >
+            <nav class="topnav" aria-label="Navigation principale">
+                <a href="{{ url_for('index', customer=customer.id) }}"
+                    >Accueil</a
+                ><a href="#">Activité</a><a href="#">Pilotage</a
+                ><a href="#">Suivi</a>
+            </nav>
+            <label class="search"
+                ><span>⌕</span
+                ><input
+                    type="search"
+                    placeholder="Rechercher un tiers, un contrat, une demande de service..."
+            /></label>
+            <div class="top-actions">
+                <span title="Aide">ⓘ</span
+                ><span class="avatar-top" title="Profil"></span>
             </div>
-          </section>
+        </header>
+        <div class="layout">
+            <aside class="rail" aria-label="Navigation client">
+                <a
+                    class="rail-item"
+                    href="{{ url_for('index', customer=customer.id) }}"
+                    ><span class="ico">♙</span><span>Synthèse</span></a
+                >
+                <a class="rail-item" href="#"
+                    ><span class="ico">▤</span
+                    ><span>Contrats<br />&amp; Serv.</span></a
+                >
+                <a class="rail-item" href="#"
+                    ><span class="ico">▣</span
+                    ><span>Banque<br />au quot.</span></a
+                >
+                <a class="rail-item" href="#"
+                    ><span class="ico">♧</span><span>Crédits</span></a
+                >
+                <a class="rail-item" href="#"
+                    ><span class="ico">♧</span
+                    ><span>Epargne<br />&amp; Titres</span></a
+                >
+                <a class="rail-item" href="#"
+                    ><span class="ico">♧</span
+                    ><span>Assu &amp;<br />Prévoy.</span></a
+                >
+            </aside>
+            <div class="workspace">
+                <div class="titlebar"><h1>Préparation du rendez-vous</h1></div>
+                <main class="content rdv-content">
+                    <div class="rdv-dashboard">
+                        {% set banner_class = 'rdv-client' %} {% set
+                        show_back_action = true %} {% include
+                        '_client_banner.html' %}
+
+                        <section
+                            class="panel workflow-panel is-preparing"
+                            id="workflow-panel"
+                            aria-labelledby="workflow-title"
+                            aria-busy="true"
+                        >
+                            <header class="panel-title workflow-heading">
+                                <span
+                                    class="title-icon workflow-mark"
+                                    id="workflow-mark"
+                                    aria-hidden="true"
+                                    >✦</span
+                                >
+                                <h2 id="workflow-title">
+                                    Préparation du prochain RDV
+                                </h2>
+                            </header>
+                            <div class="workflow-body">
+                                <p class="workflow-progress-label">
+                                    Préparation en cours
+                                    <span aria-hidden="true">·</span> 3 étapes
+                                </p>
+                                <ol
+                                    class="workflow-steps"
+                                    id="workflow-steps"
+                                    aria-label="Étapes de préparation"
+                                    aria-live="polite"
+                                >
+                                    <li
+                                        class="workflow-step is-pending"
+                                        data-step="client"
+                                    >
+                                        <span class="step-icon"
+                                            ><span
+                                                class="step-spinner"
+                                            ></span></span
+                                        ><span class="step-copy"
+                                            ><strong
+                                                >Récupération des informations
+                                                client</strong
+                                            ><small
+                                                >Profil et données
+                                                disponibles</small
+                                            ></span
+                                        >
+                                    </li>
+                                    <li
+                                        class="workflow-step is-pending"
+                                        data-step="context"
+                                    >
+                                        <span class="step-icon"
+                                            ><span
+                                                class="step-spinner"
+                                            ></span></span
+                                        ><span class="step-copy"
+                                            ><strong
+                                                >Analyse du contexte et des
+                                                points d’attention</strong
+                                            ><small
+                                                >Alertes et sujets à
+                                                vérifier</small
+                                            ></span
+                                        >
+                                    </li>
+                                    <li
+                                        class="workflow-step is-pending"
+                                        data-step="brief"
+                                    >
+                                        <span class="step-icon"
+                                            ><span
+                                                class="step-spinner"
+                                            ></span></span
+                                        ><span class="step-copy"
+                                            ><strong
+                                                >Préparation de la synthèse du
+                                                rendez-vous</strong
+                                            ><small
+                                                >Priorités et questions
+                                                suggérées</small
+                                            ></span
+                                        >
+                                    </li>
+                                </ol>
+                                <div
+                                    class="workflow-status"
+                                    id="workflow-status"
+                                    role="status"
+                                >
+                                    Démarrage de la préparation…
+                                </div>
+                                <section
+                                    class="workflow-result"
+                                    id="workflow-result"
+                                    aria-labelledby="workflow-title"
+                                    hidden
+                                >
+                                    <div class="brief-grid">
+                                        <section
+                                            class="brief-card brief-actions"
+                                            aria-labelledby="actions-title"
+                                        >
+                                            <h4 id="actions-title">
+                                                <span aria-hidden="true"
+                                                    >✦</span
+                                                >
+                                                Actions suggérées avant le RDV
+                                            </h4>
+                                            <ul id="actions-list">
+                                                <li>
+                                                    Confirmer le motif et la
+                                                    date du rendez-vous.
+                                                </li>
+                                                {% for action in view.actions %}
+                                                <li>{{ action }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </section>
+                                        <section
+                                            class="brief-card"
+                                            aria-labelledby="essentiel-title"
+                                        >
+                                            <h4 id="essentiel-title">
+                                                <span aria-hidden="true"
+                                                    >◉</span
+                                                >
+                                                L’essentiel en 30 secondes
+                                            </h4>
+                                            <dl class="facts">
+                                                <div>
+                                                    <dt>Motif du RDV</dt>
+                                                    <dd>
+                                                        {{ customer.motif or 'À
+                                                        confirmer' }}
+                                                    </dd>
+                                                </div>
+                                                <div>
+                                                    <dt>Relation client</dt>
+                                                    <dd>
+                                                        Depuis le {{
+                                                        view.relationship_date
+                                                        }}
+                                                    </dd>
+                                                </div>
+                                                <div>
+                                                    <dt>Épargne et titres</dt>
+                                                    <dd>{{ view.savings }}</dd>
+                                                </div>
+                                                <div>
+                                                    <dt>Dernier RDV</dt>
+                                                    <dd>
+                                                        {{ view.last_appointment
+                                                        or 'Aucun rendez-vous
+                                                        affiché' }}
+                                                    </dd>
+                                                </div>
+                                                <div>
+                                                    <dt>Agence</dt>
+                                                    <dd>
+                                                        {{ customer.branch }}
+                                                    </dd>
+                                                </div>
+                                            </dl>
+                                        </section>
+                                        <section
+                                            class="brief-card"
+                                            aria-labelledby="attention-title"
+                                        >
+                                            <h4 id="attention-title">
+                                                <span aria-hidden="true"
+                                                    >◈</span
+                                                >
+                                                Points d’attention
+                                            </h4>
+                                            <ul class="attention-list">
+                                                {% for label, detail in
+                                                view.alerts %}
+                                                <li>
+                                                    <strong>{{ label }}</strong
+                                                    ><span>{{ detail }}</span>
+                                                </li>
+                                                {% else %}
+                                                <li>
+                                                    <span
+                                                        >Aucun point d’attention
+                                                        signalé.</span
+                                                    >
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </section>
+                                        <section
+                                            class="brief-card topics-card"
+                                            aria-labelledby="topics-title"
+                                        >
+                                            <h4 id="topics-title">
+                                                <span aria-hidden="true"
+                                                    >◎</span
+                                                >
+                                                Sujets à explorer
+                                            </h4>
+                                            <div
+                                                class="workflow-warning"
+                                                id="topics-warning"
+                                                role="status"
+                                                hidden
+                                            ></div>
+                                            <div
+                                                class="workflow-error"
+                                                id="workflow-error"
+                                                role="alert"
+                                                hidden
+                                            ></div>
+                                            <div id="topics-list">
+                                                Analyse en cours…
+                                            </div>
+                                        </section>
+                                    </div>
+                                    <div class="brief-footer">
+                                        <button
+                                            type="button"
+                                            class="agenda-button"
+                                            id="agenda-button"
+                                            aria-expanded="false"
+                                            aria-controls="agenda-panel"
+                                        >
+                                            ✦ Afficher ma trame de RDV
+                                        </button>
+                                        <p id="topics-source">
+                                            Les sujets du client sélectionné
+                                            sont en cours d’analyse.
+                                        </p>
+                                    </div>
+                                    <section
+                                        class="agenda-panel"
+                                        id="agenda-panel"
+                                        hidden
+                                        aria-labelledby="agenda-title"
+                                    >
+                                        <h4 id="agenda-title">
+                                            Trame de rendez-vous proposée
+                                        </h4>
+                                        <ol id="agenda-list"></ol>
+                                        <div id="agenda-topics"></div>
+                                        <section
+                                            class="agenda-other-questions"
+                                            aria-labelledby="agenda-other-title"
+                                        >
+                                            <h5 id="agenda-other-title">
+                                                Autres questions
+                                            </h5>
+                                            <ul id="agenda-other-list"></ul>
+                                            <form id="agenda-other-form">
+                                                <label for="agenda-other-input"
+                                                    >Ajouter une question</label
+                                                >
+                                                <div
+                                                    class="agenda-other-controls"
+                                                >
+                                                    <input
+                                                        id="agenda-other-input"
+                                                        type="text"
+                                                        required
+                                                    />
+                                                    <button type="submit">
+                                                        Ajouter
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </section>
+                                    </section>
+                                </section>
+                            </div>
+                        </section>
+                    </div>
+                </main>
+            </div>
         </div>
-      </main>
-    </div>
-  </div>
-  <script>
-    (() => {
-      const panel = document.getElementById('workflow-panel');
-      const stepper = document.getElementById('workflow-steps');
-      const status = document.getElementById('workflow-status');
-      const result = document.getElementById('workflow-result');
-      const ready = document.getElementById('workflow-ready');
-      const topicsList = document.getElementById('topics-list');
-      const topicsWarning = document.getElementById('topics-warning');
-      const topicsSource = document.getElementById('topics-source');
-      const agendaList = document.getElementById('agenda-list');
-      const agendaQuestions = document.getElementById('agenda-questions');
-      const agendaQuestionsList = document.getElementById('agenda-questions-list');
-      const error = document.getElementById('workflow-error');
-      const agendaButton = document.getElementById('agenda-button');
-      const agendaPanel = document.getElementById('agenda-panel');
+        <script>
+            (() => {
+              const panel = document.getElementById('workflow-panel');
+              const stepper = document.getElementById('workflow-steps');
+              const status = document.getElementById('workflow-status');
+              const result = document.getElementById('workflow-result');
+              const ready = document.getElementById('workflow-ready');
+              const topicsList = document.getElementById('topics-list');
+              const topicsWarning = document.getElementById('topics-warning');
+              const topicsSource = document.getElementById('topics-source');
+              const actionsList = document.getElementById('actions-list');
+              const agendaList = document.getElementById('agenda-list');
+              const agendaTopics = document.getElementById('agenda-topics');
+              const agendaOtherForm = document.getElementById('agenda-other-form');
+              const agendaOtherInput = document.getElementById('agenda-other-input');
+              const agendaOtherList = document.getElementById('agenda-other-list');
+              const error = document.getElementById('workflow-error');
+              const agendaButton = document.getElementById('agenda-button');
+              const agendaPanel = document.getElementById('agenda-panel');
 
-      function revealBrief(complete) {
-        document.getElementById('workflow-title').textContent = 'Votre prochain rendez-vous';
-        document.getElementById('workflow-mark').hidden = true;
-        ready.textContent = complete ? 'Prêt à consulter' : 'Préparation partielle';
-        ready.hidden = false;
-        stepper.hidden = true;
-        status.hidden = true;
-        panel.classList.remove('is-preparing');
-        panel.setAttribute('aria-busy', 'false');
-        result.hidden = false;
-      }
+              function revealBrief(complete) {
+                document.getElementById('workflow-title').textContent = 'Votre prochain rendez-vous';
+                document.getElementById('workflow-mark').hidden = true;
+                ready.textContent = complete ? 'Prêt à consulter' : 'Préparation partielle';
+                ready.hidden = false;
+                stepper.hidden = true;
+                status.hidden = true;
+                panel.classList.remove('is-preparing');
+                panel.setAttribute('aria-busy', 'false');
+                result.hidden = false;
+              }
 
-      agendaButton.addEventListener('click', () => {
-        agendaPanel.hidden = !agendaPanel.hidden;
-        agendaButton.setAttribute('aria-expanded', String(!agendaPanel.hidden));
-        agendaButton.textContent = agendaPanel.hidden ? '✦ Afficher ma trame de RDV' : '✦ Masquer ma trame de RDV';
-        if (!agendaPanel.hidden) agendaPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      });
+              agendaButton.addEventListener('click', () => {
+                agendaPanel.hidden = !agendaPanel.hidden;
+                agendaButton.setAttribute('aria-expanded', String(!agendaPanel.hidden));
+                agendaButton.textContent = agendaPanel.hidden ? '✦ Afficher ma trame de RDV' : '✦ Masquer ma trame de RDV';
+                if (!agendaPanel.hidden) agendaPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              });
 
-      function updateStep(id, state) {
-        const item = document.querySelector(`[data-step="${id}"]`);
-        if (!item) return;
-        item.classList.remove('is-pending', 'is-running', 'is-complete', 'is-error');
-        item.classList.add(`is-${state}`);
-        if (state === 'running') item.setAttribute('aria-current', 'step');
-        else item.removeAttribute('aria-current');
-        const icon = item.querySelector('.step-icon');
-        icon.setAttribute('role', 'img');
-        icon.setAttribute('aria-label', { pending: 'En attente', running: 'En cours', complete: 'Terminé', error: 'Échec' }[state]);
-        icon.innerHTML = state === 'complete' ? '<svg class="step-check" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>' :
-          state === 'running' ? '<span class="step-spinner" aria-hidden="true"></span>' :
-          state === 'error' ? '<span aria-hidden="true">!</span>' : '';
-      }
+              function updateStep(id, state) {
+                const item = document.querySelector(`[data-step="${id}"]`);
+                if (!item) return;
+                item.classList.remove('is-pending', 'is-running', 'is-complete', 'is-error');
+                item.classList.add(`is-${state}`);
+                if (state === 'running') item.setAttribute('aria-current', 'step');
+                else item.removeAttribute('aria-current');
+                const icon = item.querySelector('.step-icon');
+                icon.setAttribute('role', 'img');
+                icon.setAttribute('aria-label', { pending: 'En attente', running: 'En cours', complete: 'Terminé', error: 'Échec' }[state]);
+                icon.innerHTML = state === 'complete' ? '<svg class="step-check" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>' :
+                  state === 'running' ? '<span class="step-spinner" aria-hidden="true"></span>' :
+                  state === 'error' ? '<span aria-hidden="true">!</span>' : '';
+              }
 
-      function showError(message) {
-        if (!result.hidden) return;
-        document.querySelectorAll('.workflow-step').forEach(item => {
-          if (item.classList.contains('is-running')) updateStep(item.dataset.step, 'error');
-        });
-        topicsList.textContent = '';
-        topicsSource.textContent = 'Les sujets issus des opérations ne sont pas disponibles.';
-        error.textContent = message || 'Une erreur est survenue.';
-        error.hidden = false;
-        revealBrief(false);
-      }
+              function showError(message) {
+                if (!result.hidden) return;
+                document.querySelectorAll('.workflow-step').forEach(item => {
+                  if (item.classList.contains('is-running')) updateStep(item.dataset.step, 'error');
+                });
+                topicsList.textContent = '';
+                topicsSource.textContent = 'Les sujets issus des opérations ne sont pas disponibles.';
+                error.textContent = message || 'Une erreur est survenue.';
+                error.hidden = false;
+                revealBrief(false);
+              }
 
-      function element(tag, text, className) {
-        const node = document.createElement(tag);
-        if (text != null) node.textContent = text;
-        if (className) node.className = className;
-        return node;
-      }
+              function element(tag, text, className) {
+                const node = document.createElement(tag);
+                if (text != null) node.textContent = text;
+                if (className) node.className = className;
+                return node;
+              }
 
-      let reportItems = [];
-      let suggestedSteps = [];
+              let reportItems = [];
+              let suggestedSteps = [];
 
-      function parseSuggestedSteps(value) {
-        // Older reports stored the model's markdown text inside a one-item array.
-        const markdown = Array.isArray(value) ? value[0] : value;
-        if (typeof markdown !== 'string') return [];
-        return markdown.split(/\r?\n/).map(line => line.trim())
-          .filter(Boolean)
-          .map(line => line.replace(/^[-*+]\s+|^\d+[.)]\s+/, '').trim())
-          .filter(Boolean);
-      }
+              function parseSuggestedSteps(value) {
+                // Older reports stored the model's markdown text inside a one-item array.
+                const markdown = Array.isArray(value) ? value[0] : value;
+                if (typeof markdown !== 'string') return [];
+                return markdown.split(/\r?\n/).map(line => line.trim())
+                  .filter(Boolean)
+                  .map(line => line.replace(/^[-*+]\s+|^\d+[.)]\s+/, '').trim())
+                  .filter(Boolean);
+              }
 
-      function updateAgenda() {
-        const steps = suggestedSteps.length
-          ? suggestedSteps
-          : ['Accueil et confirmation du motif du rendez-vous.', ...reportItems.map(item => item.Insight)];
-        agendaList.replaceChildren(...steps.map(step => element('li', step)));
-        const selected = [...topicsList.querySelectorAll('input[data-topic]:checked')];
-        agendaQuestionsList.replaceChildren(...selected.map(input => element('li', input.value)));
-        agendaQuestions.hidden = !selected.length;
-      }
+              function updateAgenda() {
+                const steps = suggestedSteps.length
+                  ? suggestedSteps
+                  : ['Accueil et confirmation du motif du rendez-vous.'];
+                agendaList.replaceChildren(...steps.map(step => element('li', step)));
+                agendaTopics.replaceChildren(...reportItems.map((item, index) => {
+                  const section = element('section', null, 'agenda-topic');
+                  section.append(element('h5', item.Insight));
+                  const selected = [...topicsList.querySelectorAll(`input[data-topic="${index}"]:checked`)];
+                  if (selected.length) {
+                    const list = element('ul');
+                    list.append(...selected.map(input => element('li', input.value)));
+                    section.append(list);
+                  }
+                  return section;
+                }));
+              }
 
-      topicsList.addEventListener('change', event => {
-        if (event.target.matches('input[type="checkbox"][data-topic]')) updateAgenda();
-      });
+              topicsList.addEventListener('change', event => {
+                if (event.target.matches('input[type="checkbox"][data-topic]')) updateAgenda();
+              });
 
-      function showReport(report) {
-        reportItems = report.items;
-        suggestedSteps = parseSuggestedSteps(report.steps_to_suggest);
-        topicsList.replaceChildren();
-        if (!report.items.length) {
-          topicsList.append(element('p', 'Aucun sujet complet issu du CSV n’est disponible pour ce rendez-vous.'));
-        }
-        report.items.forEach((item, index) => {
-          const heading = element('div');
-          heading.append(element('span', null, `topic-dot ${['', 'amber', 'green'][index] || ''}`.trim()), element('strong', item.Insight));
+              agendaOtherForm.addEventListener('submit', event => {
+                event.preventDefault();
+                const question = agendaOtherInput.value.trim();
+                if (!question) return;
+                agendaOtherList.append(element('li', question));
+                agendaOtherForm.reset();
+                agendaOtherInput.focus();
+              });
 
-          const details = element('details');
-          details.append(element('summary', 'Signal dans les données'), element('p', item.signal_in_the_data));
-          if (item.details) details.append(element('p', item.details));
-          const topic = element('div', null, 'topic');
-          topic.append(heading, details);
+              function showReport(report) {
+                reportItems = report.items;
+                suggestedSteps = parseSuggestedSteps(report.steps_to_suggest);
+                actionsList.querySelectorAll('.report-action').forEach(item => item.remove());
+                actionsList.append(...suggestedSteps.map(step => element('li', step, 'report-action')));
+                topicsList.replaceChildren();
+                if (!report.items.length) {
+                  topicsList.append(element('p', 'Aucun sujet complet issu du CSV n’est disponible pour ce rendez-vous.'));
+                }
+                report.items.forEach((item, index) => {
+                  const heading = element('div');
+                  heading.append(element('span', null, `topic-dot ${['', 'amber', 'green'][index] || ''}`.trim()), element('strong', item.Insight));
 
-          if (Array.isArray(item.questions) && item.questions.length) {
-            const questions = element('div', null, 'topic-questions');
-            questions.append(element('p', 'Questions à poser — cochez celles à ajouter à la trame'));
-            const questionList = element('ul');
-            item.questions.forEach(question => {
-              const label = element('label', null, 'question-option');
-              const checkbox = element('input');
-              checkbox.type = 'checkbox';
-              checkbox.value = question;
-              checkbox.dataset.topic = index;
-              label.append(checkbox, element('span', question));
-              const listItem = element('li');
-              listItem.append(label);
-              questionList.append(listItem);
-            });
-            questions.append(questionList);
-            details.append(questions);
-          }
-          topicsList.append(topic);
-        });
-        updateAgenda();
-        if (suggestedSteps.length) {
-          agendaPanel.hidden = false;
-          agendaButton.setAttribute('aria-expanded', 'true');
-          agendaButton.textContent = '✦ Masquer ma trame de RDV';
-        }
-      }
+                  const details = element('details');
+                  details.append(element('summary', 'Approfondir'), element('p', item.signal_in_the_data));
+                  if (item.details) details.append(element('p', item.details));
+                  const topic = element('div', null, 'topic');
+                  topic.append(heading, details);
 
-      function handleEvent(rawData) {
-        let data;
-        try { data = JSON.parse(rawData); } catch { return; }
-        if (data.step && data.status) updateStep(data.step, data.status);
-        if (data.status === 'running') {
-          const current = document.querySelector(`[data-step="${data.step}"] strong`);
-          status.textContent = data.message || (current ? current.textContent + '…' : 'Préparation en cours…');
-        }
-        if (data.step === 'brief' && data.status === 'complete' && data.report && Array.isArray(data.report.items)) {
-          showReport(data.report);
-          topicsWarning.textContent = data.warning || '';
-          topicsWarning.hidden = !data.warning;
-          topicsSource.textContent = data.report.items.length
-            ? 'Les sujets affichés proviennent de l’analyse des opérations du client sélectionné.'
-            : 'Aucun sujet issu de l’analyse CSV n’est affiché.';
-          revealBrief(true);
-        }
-        if (data.status === 'error') showError(data.message);
-      }
+                  if (Array.isArray(item.questions) && item.questions.length) {
+                    const questions = element('div', null, 'topic-questions');
+                    questions.append(element('p', 'Questions à poser — cochez celles à ajouter à la trame'));
+                    const questionList = element('ul');
+                    item.questions.forEach(question => {
+                      const label = element('label', null, 'question-option');
+                      const checkbox = element('input');
+                      checkbox.type = 'checkbox';
+                      checkbox.value = question;
+                      checkbox.dataset.topic = index;
+                      label.append(checkbox, element('span', question));
+                      const listItem = element('li');
+                      listItem.append(label);
+                      questionList.append(listItem);
+                    });
+                    questions.append(questionList);
+                    details.append(questions);
+                  }
+                  topicsList.append(topic);
+                });
+                updateAgenda();
+                if (suggestedSteps.length) {
+                  agendaPanel.hidden = false;
+                  agendaButton.setAttribute('aria-expanded', 'true');
+                  agendaButton.textContent = '✦ Masquer ma trame de RDV';
+                }
+              }
 
-      async function startWorkflow() {
-        try {
-          const response = await fetch({{ url_for('rdv_workflow', customer=customer.id) | tojson }}, { method: 'POST', headers: { 'Accept': 'text/event-stream' } });
-          if (!response.ok || !response.body) throw new Error('Impossible de démarrer la préparation. Réessayez.');
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
-          while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            const events = buffer.split('\n\n');
-            buffer = events.pop() || '';
-            for (const event of events) {
-              const dataLine = event.split('\n').find(line => line.startsWith('data:'));
-              if (dataLine) handleEvent(dataLine.slice(5).trim());
-            }
-          }
-          if (result.hidden) showError('La préparation s’est interrompue. Réessayez.');
-        } catch (err) {
-          showError(err.message);
-        }
-      }
+              function handleEvent(rawData) {
+                let data;
+                try { data = JSON.parse(rawData); } catch { return; }
+                if (data.step && data.status) updateStep(data.step, data.status);
+                if (data.status === 'running') {
+                  const current = document.querySelector(`[data-step="${data.step}"] strong`);
+                  status.textContent = data.message || (current ? current.textContent + '…' : 'Préparation en cours…');
+                }
+                if (data.step === 'brief' && data.status === 'complete' && data.report && Array.isArray(data.report.items)) {
+                  showReport(data.report);
+                  topicsWarning.textContent = data.warning || '';
+                  topicsWarning.hidden = !data.warning;
+                  topicsSource.textContent = data.report.items.length
+                    ? 'Les sujets affichés proviennent de l’analyse des opérations du client sélectionné.'
+                    : 'Aucun sujet issu de l’analyse CSV n’est affiché.';
+                  revealBrief(true);
+                }
+                if (data.status === 'error') showError(data.message);
+              }
 
-      startWorkflow();
-    })();
-  </script>
-</body>
+              async function startWorkflow() {
+                try {
+                  const response = await fetch({{ url_for('rdv_workflow', customer=customer.id) | tojson }}, { method: 'POST', headers: { 'Accept': 'text/event-stream' } });
+                  if (!response.ok || !response.body) throw new Error('Impossible de démarrer la préparation. Réessayez.');
+                  const reader = response.body.getReader();
+                  const decoder = new TextDecoder();
+                  let buffer = '';
+                  while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const events = buffer.split('\n\n');
+                    buffer = events.pop() || '';
+                    for (const event of events) {
+                      const dataLine = event.split('\n').find(line => line.startsWith('data:'));
+                      if (dataLine) handleEvent(dataLine.slice(5).trim());
+                    }
+                  }
+                  if (result.hidden) showError('La préparation s’est interrompue. Réessayez.');
+                } catch (err) {
+                  showError(err.message);
+                }
+              }
+
+              startWorkflow();
+            })();
+        </script>
+    </body>
 </html>

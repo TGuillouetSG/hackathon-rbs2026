@@ -1063,6 +1063,14 @@ a {
 .agenda-panel ol { margin: 0; padding-left: 19px; }
 .agenda-panel ul { margin: 0; padding-left: 19px; }
 .agenda-panel p { margin: 0; white-space: pre-wrap; }
+.agenda-topic, .agenda-other-questions { margin-top: 14px; padding-top: 10px; border-top: 1px solid #dce9df; }
+.agenda-topic h5, .agenda-other-questions h5 { margin: 0 0 5px; font-size: 11px; }
+.agenda-other-questions form { margin-top: 8px; }
+.agenda-other-questions label { display: block; margin-bottom: 5px; font-weight: 600; }
+.agenda-other-controls { display: flex; gap: 8px; }
+.agenda-other-controls input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid #b9d8c7; border-radius: 6px; font: inherit; }
+.agenda-other-controls button { border: 0; border-radius: 6px; background: #19764c; color: #fff; padding: 8px 12px; cursor: pointer; font: inherit; font-weight: 700; }
+.agenda-other-controls input:focus-visible, .agenda-other-controls button:focus-visible { outline: 2px solid #315bd3; outline-offset: 2px; }
 
 /* RDV page refresh */
 .rdv-content .workflow-heading { height: auto; min-height: 40px; justify-content: flex-start; padding-top: 7px; padding-bottom: 7px; }
