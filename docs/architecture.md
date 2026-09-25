@@ -44,9 +44,6 @@ flowchart LR
 
     subgraph azure["Azure provisionne par Bicep"]
         foundry["Microsoft Foundry\nproject + deploiements LLM"]
-        blob["Azure Blob Storage\ndocuments"]
-        cosmos["Azure Cosmos DB\nagent/sessions"]
-        search["Azure AI Search\nrecherche semantique"]
     end
 
     user --> browser
@@ -66,10 +63,6 @@ flowchart LR
     tools -->|synthese structuree| foundry
     agent -->|rapport + etapes| sse
     sse -->|evenements de progression| browser
-
-    blob -.->|integration prevue| app
-    cosmos -.->|persistance prevue| app
-    search -.->|RAG prevu| app
 
     classDef local fill:#e8f0f7,stroke:#31627d,color:#102a43
     classDef azure fill:#e9f5ec,stroke:#2f7d4a,color:#12351f

@@ -39,4 +39,3 @@ bin/
 obj/
 infra/main.json
 starter/uv.lock
-docs/
