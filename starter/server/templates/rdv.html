@@ -540,11 +540,6 @@
                   topicsList.append(topic);
                 });
                 updateAgenda();
-                if (suggestedSteps.length) {
-                  agendaPanel.hidden = false;
-                  agendaButton.setAttribute('aria-expanded', 'true');
-                  agendaButton.textContent = '✦ Masquer ma trame de RDV';
-                }
               }
 
               function handleEvent(rawData) {
