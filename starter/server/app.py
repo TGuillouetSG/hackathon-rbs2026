@@ -203,7 +203,7 @@ def rdv_workflow():
                 if not value["items"]:
                     msg= "Aucun sujet étayé n'a été trouvé dans les opérations."
                     if "litige" in customer.motif.lower():
-                       msg="Le motif du rendez-vous n'est pas adapté pour améliorer la relation commerciale."
+                       msg="Le motif du rendez-vous n'est pas adapté pour proposer des sujets à explorer."
 
                     result["warning"] =msg
                     app.logger.warning(
