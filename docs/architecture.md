@@ -84,7 +84,3 @@ flowchart LR
 6. Les agregats produits sont valides avant d'etre envoyes a Foundry pour la
    synthese structuree.
 7. Le rapport et les etapes suggerees sont renvoyes au navigateur via SSE.
-
-Les ressources Blob Storage, Cosmos DB et Azure AI Search sont bien creees par
-`infra/main.bicep`, mais ne sont pas encore utilisees par le workflow de
-`starter`.
