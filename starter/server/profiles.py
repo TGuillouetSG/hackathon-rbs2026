@@ -130,5 +130,5 @@ def profile_view(customer: Customer):
         "savings": _euros(customer.savings_eur),
         "badges": badges,
         "alerts": customer.alerts,
-        "actions": actions,
+        "actions": actions[0:1],
     }
