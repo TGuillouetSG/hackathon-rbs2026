@@ -48,6 +48,7 @@ class Customer(BaseModel):
     recent_calls: int
     reports: int
     property_signal: str | None = None
+    alerts: list[tuple[str, str]]
     csv: str
     motif: str = ""
 
@@ -89,10 +90,8 @@ def _euros(value):
 
 def profile_view(customer: Customer):
     """Return only facts and suggestions supported by this customer record."""
-    alerts = []
     actions = []
     if customer.address_needs_update:
-        alerts.append(("Adresse", "Adresse à mettre à jour."))
         actions.append("Confirmer l’adresse avec le client.")
     missing_contact = [
         label
@@ -100,25 +99,17 @@ def profile_view(customer: Customer):
         if not value
     ]
     if missing_contact:
-        alerts.append(
-            ("Coordonnées", "À renseigner : " + ", ".join(missing_contact) + ".")
-        )
         actions.append(
             "Demander les coordonnées manquantes : " + ", ".join(missing_contact) + "."
         )
     if customer.undelivered_mail_risk:
-        alerts.append(("Courrier", "Risque de pli non distribué signalé."))
         actions.append("Vérifier le risque de pli non distribué.")
     if not customer.profession:
-        alerts.append(("Profession", "Profession non renseignée."))
         actions.append("Compléter la profession du client.")
     if customer.property_signal:
-        alerts.append(("Projet immobilier possible", customer.property_signal))
         actions.append(
             "Demander si un projet immobilier est en cours et discuter du besoin de financement."
         )
-    if not customer.last_appointment:
-        alerts.append(("Relation", "Aucun rendez-vous affiché."))
 
     badges = [("Client", "b-blue"), (customer.segment, "b-purple")]
     if customer.classification:
@@ -138,6 +129,6 @@ def profile_view(customer: Customer):
         "last_appointment": _display_date(customer.last_appointment),
         "savings": _euros(customer.savings_eur),
         "badges": badges,
-        "alerts": alerts,
+        "alerts": customer.alerts,
         "actions": actions,
     }

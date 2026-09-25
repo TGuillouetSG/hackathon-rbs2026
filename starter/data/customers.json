@@ -36,6 +36,9 @@
     "recent_calls": 1,
     "reports": 1,
     "property_signal": "Deux virements vers une étude notariale en août et septembre 2026 ; projet immobilier à confirmer.",
+    "alerts": [
+      ["Projet immobilier possible", "Deux virements vers une étude notariale en août et septembre 2026 ; projet immobilier à confirmer."]
+    ],
     "csv": "inputs/client-001.csv",
     "motif": "Restructurer les crédits consommations"
   },
@@ -75,6 +78,13 @@
     "last_appointment": null,
     "recent_calls": 0,
     "reports": 0,
+    "alerts": [
+      ["Adresse", "Adresse à mettre à jour."],
+      ["Coordonnées", "À renseigner : téléphone, e-mail."],
+      ["Courrier", "Risque de pli non distribué signalé."],
+      ["Profession", "Profession non renseignée."],
+      ["Relation", "Aucun rendez-vous affiché."]
+    ],
     "csv": "inputs/client-002.csv",
     "motif": ""
   },
@@ -114,6 +124,7 @@
     "last_appointment": "2026-04-09",
     "recent_calls": 1,
     "reports": 0,
+    "alerts": [],
     "csv": "inputs/client-003.csv",
     "motif":"Gestion d'un litige lié à une fraude à la carte bancaire avec contestation de frais d'incident"
   }

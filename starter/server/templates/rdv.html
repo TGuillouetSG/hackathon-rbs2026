@@ -242,7 +242,8 @@
                                             </h4>
                                             <ul class="attention-list">
                                                 {% for label, detail in
-                                                view.alerts %}
+                                                view.alerts if label not in
+                                                ('Courrier', 'Relation') %}
                                                 <li>
                                                     <strong>{{ label }}</strong
                                                     ><span>{{ detail }}</span>
@@ -336,6 +337,19 @@
                                                 </div>
                                             </form>
                                         </section>
+                                        <button
+                                            type="button"
+                                            class="agenda-button agenda-download"
+                                            id="agenda-download"
+                                        >
+                                            Télécharger la trame
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="agenda-button agenda-download"
+                                        >
+                                            Préparer le script
+                                        </button>
                                     </section>
                                 </section>
                             </div>
@@ -362,6 +376,7 @@
               const error = document.getElementById('workflow-error');
               const agendaButton = document.getElementById('agenda-button');
               const agendaPanel = document.getElementById('agenda-panel');
+              const agendaDownload = document.getElementById('agenda-download');
 
               function revealBrief() {
                 document.getElementById('workflow-title').textContent = 'Votre prochain rendez-vous';
@@ -378,6 +393,33 @@
                 agendaButton.setAttribute('aria-expanded', String(!agendaPanel.hidden));
                 agendaButton.textContent = agendaPanel.hidden ? '✦ Afficher ma trame de RDV' : '✦ Masquer ma trame de RDV';
                 if (!agendaPanel.hidden) agendaPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              });
+
+              agendaDownload.addEventListener('click', () => {
+                const escapeMarkdown = value => value.trim().replace(/([\\`*_{}\[\]()#+.!|>~-])/g, '\\$1');
+                const lines = ['# Trame de rendez-vous proposée', ''];
+                agendaList.querySelectorAll('li').forEach((item, index) => {
+                  lines.push(`${index + 1}. ${escapeMarkdown(item.textContent)}`);
+                });
+                agendaTopics.querySelectorAll('.agenda-topic').forEach(topic => {
+                  lines.push('', `## ${escapeMarkdown(topic.querySelector('h5').textContent)}`);
+                  topic.querySelectorAll('li').forEach(question => {
+                    lines.push(`- ${escapeMarkdown(question.textContent)}`);
+                  });
+                });
+                lines.push('', '## Autres questions');
+                agendaOtherList.querySelectorAll('li').forEach(question => {
+                  lines.push(`- ${escapeMarkdown(question.textContent)}`);
+                });
+                const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/markdown;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `trame-rdv-${String({{ customer.id | tojson }}).replace(/[^a-zA-Z0-9_-]/g, '-')}.md`;
+                document.body.append(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 0);
               });
 
               function updateStep(id, state) {
