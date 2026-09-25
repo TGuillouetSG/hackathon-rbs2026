@@ -29,7 +29,7 @@ else:
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.logger.setLevel(logging.INFO)
 STARTER_DIR = Path(__file__).resolve().parents[1]
-WORKFLOW_HEARTBEAT_SECONDS = 4
+WORKFLOW_HEARTBEAT_SECONDS = 2
 
 
 @app.route("/")
