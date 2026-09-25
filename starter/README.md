@@ -78,5 +78,45 @@ Start the Flask app from `starter` with `uv run flask --app server.app run`.
 Starting from `starter/server` with `python -m flask --app app run` also works.
 The Azure Foundry settings listed above are required for the CSV analysis.
 
+### Record the appointment demo
+
+On Windows, double-click `record_demo.bat` at the repository root. It uses
+`uv` to install the Python dependencies and Playwright browser files, starts
+the Flask app if needed, runs the recorder, and stops the server it started
+when recording ends. The window stays open and prints the video path. Node.js
+and npm are not needed.
+
+Alternatively, from `starter` run the recorder directly after starting Flask:
+
+```bash
+uv sync
+uv run playwright install chromium
+uv run python record_demo.py
+```
+
+The script records one video at `output/demo/rdv-demo-001-003.webm`. It selects
+Marc (001), shows the loading sequence, opens every generated “Approfondir”
+section, checks the first suggested question in each topic, and shows the
+meeting outline. It returns through the visible synthesis link and repeats the
+flow for Nadia (003). Nadia's analysis error is part of the demo: the recorder
+shows it, skips unavailable topics, and continues to the trame. Unexpected
+failures discard the take and retry the full recording up to three times.
+
+Set `DEMO_URL` if the app is not at `http://127.0.0.1:5000`. Tune the recording
+with `DEMO_WIDTH` and `DEMO_HEIGHT` (default `1440×900`),
+`DEMO_SCROLL_STEP_PX` (default `65`), `DEMO_SCROLL_DELAY_MS` (default `700`),
+`DEMO_CLICK_PAUSE_MS` (default `350`), and `DEMO_SCENE_PAUSE_MS` (default
+`900`). Smaller scroll steps or longer delays make the video slower.
+`DEMO_QUESTIONS_PER_TOPIC` controls how many questions are checked per topic.
+The script visibly moves a drawn cursor to each control before clicking it;
+set `DEMO_MOUSE_MOVE_MS` (default `350`) and `DEMO_MOUSE_HOVER_MS` (default
+`120`) to tune its motion and hover pause.
+The Windows launcher uses installed Edge automatically when available. It
+still runs Playwright's browser installation step for recording support. Set
+`DEMO_BROWSER_CHANNEL=msedge` for a direct run with Edge, or `DEMO_HEADLESS=1`
+to run without a visible window.
+The run time depends on the live analysis; the defaults aim for a slow demo,
+and these timing variables can be adjusted toward five minutes.
+
 The tests use a fake Foundry response and execute generated Python locally.
 They do not make Azure requests.
