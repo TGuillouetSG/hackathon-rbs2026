@@ -350,7 +350,6 @@
               const stepper = document.getElementById('workflow-steps');
               const status = document.getElementById('workflow-status');
               const result = document.getElementById('workflow-result');
-              const ready = document.getElementById('workflow-ready');
               const topicsList = document.getElementById('topics-list');
               const topicsWarning = document.getElementById('topics-warning');
               const topicsSource = document.getElementById('topics-source');
@@ -364,11 +363,9 @@
               const agendaButton = document.getElementById('agenda-button');
               const agendaPanel = document.getElementById('agenda-panel');
 
-              function revealBrief(complete) {
+              function revealBrief() {
                 document.getElementById('workflow-title').textContent = 'Votre prochain rendez-vous';
                 document.getElementById('workflow-mark').hidden = true;
-                ready.textContent = complete ? 'Prêt à consulter' : 'Préparation partielle';
-                ready.hidden = false;
                 stepper.hidden = true;
                 status.hidden = true;
                 panel.classList.remove('is-preparing');
@@ -407,7 +404,7 @@
                 topicsSource.textContent = 'Les sujets issus des opérations ne sont pas disponibles.';
                 error.textContent = message || 'Une erreur est survenue.';
                 error.hidden = false;
-                revealBrief(false);
+                revealBrief();
               }
 
               function element(tag, text, className) {
@@ -523,7 +520,7 @@
                   topicsSource.textContent = data.report.items.length
                     ? 'Les sujets affichés proviennent de l’analyse des opérations du client sélectionné.'
                     : 'Aucun sujet issu de l’analyse CSV n’est affiché.';
-                  revealBrief(true);
+                  revealBrief();
                 }
                 if (data.status === 'error') showError(data.message);
               }

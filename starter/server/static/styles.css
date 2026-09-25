@@ -976,7 +976,7 @@ a {
 
 .rdv-client { margin-bottom: 15px; }
 .workflow-panel.is-preparing .workflow-body { padding-top: 13px; padding-bottom: 17px; }
-.workflow-mark[hidden], .brief-ready[hidden] { display: none; }
+.workflow-mark[hidden] { display: none; }
 .workflow-body { padding: 20px 27px 25px; }
 .workflow-steps { list-style: none; max-width: 520px; margin: 0 auto; padding: 0; }
 .workflow-step { min-height: 49px; display: flex; align-items: center; gap: 11px; position: relative; }
@@ -1018,7 +1018,6 @@ a {
 .brief-header { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 0 0 16px; border-bottom: 1px solid #e2e7ee; }
 .brief-header h3 { margin: 5px 0; color: #171b42; font-size: 20px; }
 .brief-header p { margin: 0; color: #667080; font-size: 11px; }
-.brief-ready { flex: none; padding: 6px 9px; border-radius: 30px; background: #e8f5ed; color: #17613d; font-size: 10px; font-weight: 700; }
 .brief-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 17px; }
 .brief-card { padding: 17px 18px; border: 1px solid #e0e5eb; border-radius: 9px; background: #fff; box-shadow: 0 2px 8px rgba(28, 39, 70, .04); }
 .brief-card h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 13px; color: #171b42; font-size: 14px; }
@@ -1094,7 +1093,6 @@ a {
 .rdv-content .workflow-status { display: flex; align-items: flex-start; gap: 10px; width: min(100%, 600px); margin: 16px auto 0; padding: 13px 15px; border-color: #e1e8fa; border-radius: 10px; background: #f5f7ff; color: #41517f; font-size: 12px; text-align: left; }
 .rdv-content .workflow-status[hidden] { display: none; }
 .rdv-content .workflow-status::before { content: ""; width: 7px; height: 7px; flex: none; margin-top: 5px; border-radius: 50%; background: #586ad7; box-shadow: 0 0 0 4px #e4e9ff; }
-.rdv-content .brief-ready { margin-left: auto; padding: 5px 10px; font-size: 10px; }
 .rdv-content .workflow-result { margin-top: 0; }
 .rdv-content .brief-grid { gap: 16px; margin-top: 0; }
 .rdv-content .brief-card { padding: 21px 22px; border-color: #e5e9f2; border-radius: 12px; box-shadow: 0 4px 16px rgba(29, 42, 85, .04); }
