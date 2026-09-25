@@ -23,8 +23,8 @@ def main() -> None:
     )
 
     result = CsvAnalysisAgent(foundry_client=client).run(
-        # "Gestion d'un litige lié à une fraude à la carte bancaire avec contestation de frais d'incident",
-        "Restructurer les crédits conso",
+        "Gestion d'un litige lié à une fraude à la carte bancaire avec contestation de frais d'incident",
+        # "Restructurer les crédits conso",
         csv_path,
         settings.agent.objective,
         output_dir,
